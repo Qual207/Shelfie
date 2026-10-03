@@ -33,6 +33,9 @@ export default function Home() {
         <Link href="/catalog-admin" className="px-8 py-4 rounded-xl border-2 border-ink text-xl font-bold hover:bg-white">
           View catalog
         </Link>
+        <Link href="/shop" className="px-8 py-4 rounded-xl border-2 border-ink text-xl font-bold hover:bg-white">
+          Shop with my agent
+        </Link>
       </div>
     </div>
   );

@@ -49,17 +49,26 @@ export async function decide(room: string, from: "requester" | "store", name: st
   const id = await shopperAgentId();
   let decision: Decision;
   try {
+    const parse = (reply: string) => {
+      try {
+        return parseModelJson(reply) as { to?: unknown; message?: unknown };
+      } catch {
+        return null;
+      }
+    };
     let reply = await runTurn(id, state.session, `${prefix}: ${text}`);
-    let value: unknown;
-    try {
-      value = parseModelJson(reply);
-    } catch {
+    let v = parse(reply);
+    if (!v) {
       reply = await runTurn(id, state.session, "Reply again with only the JSON object.");
-      value = parseModelJson(reply);
+      v = parse(reply);
     }
-    const v = value as { to?: unknown; message?: unknown };
-    if (typeof v.message !== "string" || !v.message.trim()) throw new Error("Shopper reply had no message");
-    decision = { to: v.to === "store" ? "store" : "requester", message: v.message.trim() };
+    if (typeof v?.message === "string" && v.message.trim()) {
+      decision = { to: v.to === "store" ? "store" : "requester", message: v.message.trim() };
+    } else if (reply.trim()) {
+      decision = { to: "requester", message: reply.trim() }; // still prose: it is talking to the person
+    } else {
+      throw new Error("Shopper reply was empty");
+    }
   } catch (err) {
     rooms.delete(room); // start clean next time rather than resume a broken run
     throw err;

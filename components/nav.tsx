@@ -12,6 +12,7 @@ const LINKS = [
 
 export function Nav() {
   const pathname = usePathname();
+  if (pathname === "/shop") return null; // the shopper's window is not the store's app
   return (
     <header className="bg-white border-b border-line">
       <div className="max-w-[1500px] mx-auto px-6 h-16 flex items-center gap-8">

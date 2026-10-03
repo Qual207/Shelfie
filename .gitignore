@@ -30,6 +30,9 @@ Thumbs.db
 # Shelfie runtime data (SQLite DB, uploaded videos, frames, demo snapshot)
 /data/
 
+# Personal demo walkthrough (not pushed)
+DEMO_GUIDE.md
+
 # Shelf videos (large binaries)
 *.mov
 *.MOV
