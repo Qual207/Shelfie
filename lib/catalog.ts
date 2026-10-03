@@ -20,6 +20,13 @@ export interface Product {
   off_shelf_at: string | null;
   last_seen_at: string;
   created_at: string;
+  /** Product cropped out of its best frame (relative to data/), once imaging has run. */
+  crop_path: string | null;
+  /** Display photo: the refined crop when refinement succeeded, else the crop. */
+  image_path: string | null;
+  /** VLM check of the crop: null = not checked yet. */
+  check_status: "verified" | "corrected" | "not_product" | null;
+  check_note: string | null;
 }
 
 /** A product as the vision model reports it (scan format). */

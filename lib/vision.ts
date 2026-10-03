@@ -2,8 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { ScannedProduct } from "./catalog";
 import { DATA_DIR } from "./db";
-import { parseModelJson } from "./json";
-import { ensureAgent, runTurn, type AgentSpec, type SessionState, type ToolHandler } from "./zoowork";
+import { askJson, ensureAgent, type AgentSpec, type ToolHandler } from "./zoowork";
 
 // Vision runs on a ZooWork agent: the frames reach the model as base64 images in the result of
 // the get_frames custom tool (verified by scripts/test-zoowork.ts on the Anthropic model path).
@@ -75,36 +74,25 @@ export interface RescanResult {
   new_products: ScannedProduct[];
 }
 
-function framesTool(frames: string[]): ToolHandler {
+/** A custom-tool handler that returns these images (paths relative to data/), in order. */
+export function imageTool(toolName: string, files: string[]): ToolHandler {
   return async (name) => {
-    if (name !== "get_frames") throw new Error(`Unknown tool ${name}`);
-    return frames.map((frame) => ({
+    if (name !== toolName) throw new Error(`Unknown tool ${name}`);
+    return files.map((file) => ({
       type: "image" as const,
       source: {
         type: "base64" as const,
-        media_type: "image/jpeg" as const,
-        data: readFileSync(path.join(DATA_DIR, frame)).toString("base64"),
+        media_type: file.endsWith(".png") ? ("image/png" as const) : ("image/jpeg" as const),
+        data: readFileSync(path.join(DATA_DIR, file)).toString("base64"),
       },
     }));
   };
 }
 
-/** One vision turn in a fresh session; on unparseable output, asks once more in the same session. */
-async function askJson(prompt: string, onTool?: ToolHandler): Promise<{ value: unknown; raw: string }> {
-  const agentId = await visionAgentId();
-  const session: SessionState = {};
-  const raw = await runTurn(agentId, session, prompt, onTool);
-  try {
-    return { value: parseModelJson(raw), raw };
-  } catch {
-    const retry = await runTurn(
-      agentId,
-      session,
-      "Your last reply was not valid JSON. Reply again with only the JSON object.",
-      onTool,
-    );
-    return { value: parseModelJson(retry), raw: retry };
-  }
+const framesTool = (frames: string[]) => imageTool("get_frames", frames);
+
+async function askVision(prompt: string, onTool?: ToolHandler) {
+  return askJson(await visionAgentId(), prompt, onTool);
 }
 
 function toScannedProduct(value: unknown, frameCount: number): ScannedProduct | null {
@@ -148,7 +136,7 @@ export function normalizeRescan(value: unknown, frameCount: number, catalogIds: 
 }
 
 export async function scanFrames(frames: string[]): Promise<{ products: ScannedProduct[]; raw: string }> {
-  const { value, raw } = await askJson(scanPrompt(frames.length), framesTool(frames));
+  const { value, raw } = await askVision(scanPrompt(frames.length), framesTool(frames));
   return { products: normalizeScan(value, frames.length), raw };
 }
 
@@ -156,7 +144,7 @@ export async function rescanFrames(
   frames: string[],
   catalog: CatalogEntry[],
 ): Promise<{ result: RescanResult; raw: string }> {
-  const { value, raw } = await askJson(rescanPrompt(frames.length, catalog), framesTool(frames));
+  const { value, raw } = await askVision(rescanPrompt(frames.length, catalog), framesTool(frames));
   return { result: normalizeRescan(value, frames.length, catalog.map((c) => c.id)), raw };
 }
 
@@ -165,7 +153,7 @@ export async function matchSpokenPrice(
   transcript: string,
   unpriced: { id: number; name: string }[],
 ): Promise<{ product_id: number | null; price_usd: number | null }> {
-  const { value } = await askJson(
+  const { value } = await askVision(
     `A store owner said: "${transcript}"
 They were giving the price of one of these products, which have no price yet: ${JSON.stringify(unpriced)}
 Which product did they mean, and what price in US dollars? Spoken numbers like "twenty-two" mean 22; "twelve ninety-nine" means 12.99.

@@ -9,6 +9,7 @@ export interface ShopHold {
   product_name: string;
   price_usd: number | null;
   frame_path: string | null;
+  image_path: string | null;
   customer_name: string;
   until_time: string;
   store: string;
@@ -39,7 +40,8 @@ export async function GET(request: Request) {
     if (!from || !since) return errorResponse(new Error("from and since are required"), 400);
     const hold = getDb()
       .prepare(
-        `SELECT p.name AS product_name, p.price_usd, p.frame_path, h.customer_name, h.until_time
+        `SELECT p.name AS product_name, p.price_usd, p.frame_path, COALESCE(p.image_path, p.crop_path) AS image_path,
+                h.customer_name, h.until_time
          FROM holds h JOIN products p ON p.id = h.product_id
          WHERE h.created_at >= ? ORDER BY h.id DESC LIMIT 1`,
       )

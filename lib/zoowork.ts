@@ -9,6 +9,7 @@ import {
   type CustomToolResultContent,
   type ZooworkClient,
 } from "@zoowork-ai/sdk";
+import { parseModelJson } from "./json";
 
 export interface AgentSpec {
   role: string;
@@ -16,6 +17,8 @@ export interface AgentSpec {
   model: string;
   instructions: string;
   tools?: CustomToolDeclaration[];
+  /** ZooWork built-in tools to allow besides our custom tools (e.g. image_generate). */
+  builtinTools?: string[];
 }
 
 export type ToolHandler = (
@@ -43,12 +46,13 @@ export function zoowork(): ZooworkClient {
 export async function ensureAgent(spec: AgentSpec): Promise<string> {
   const zc = zoowork();
   const labels = { app: "shelfie", role: spec.role };
+  const allowed = [...(spec.tools ?? []).map((t) => t.name), ...(spec.builtinTools ?? [])];
   const config = {
     model: { primary: spec.model, input: ["text", "image"] },
     persona: { docs: [{ name: "AGENTS.md", content: spec.instructions }] },
     custom_tools: spec.tools ?? [],
-    // Only our own tools: no web search or sandbox tools to wander into, and a smaller prompt.
-    tool_policy: spec.tools?.length ? { allow: spec.tools.map((t) => t.name) } : { deny: ["*"] },
+    // Only the tools we name: no web search or stray sandbox tools, and a smaller prompt.
+    tool_policy: allowed.length ? { allow: allowed } : { deny: ["*"] },
     include_global_skills: false,
   };
 
@@ -148,6 +152,22 @@ async function executeTool(
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+  }
+}
+
+/** One turn in a fresh session that must answer with JSON; on unparseable output, asks once more. */
+export async function askJson(
+  agentId: string,
+  prompt: string,
+  onTool?: ToolHandler,
+): Promise<{ value: unknown; raw: string }> {
+  const session: SessionState = {};
+  const raw = await runTurn(agentId, session, prompt, onTool);
+  try {
+    return { value: parseModelJson(raw), raw };
+  } catch {
+    const retry = await runTurn(agentId, session, "Your last reply was not valid JSON. Reply again with only the JSON object.", onTool);
+    return { value: parseModelJson(retry), raw: retry };
   }
 }
 

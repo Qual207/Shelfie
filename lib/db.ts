@@ -60,6 +60,11 @@ export function openDb(file: string = DB_PATH): Db {
   db.pragma("busy_timeout = 5000");
   db.pragma("foreign_keys = ON");
   db.exec(SCHEMA);
+  // Product imaging columns, added in place so existing demo databases keep their data.
+  const columns = (db.prepare("PRAGMA table_info(products)").all() as { name: string }[]).map((c) => c.name);
+  for (const column of ["crop_path", "image_path", "check_status", "check_note"]) {
+    if (!columns.includes(column)) db.exec(`ALTER TABLE products ADD COLUMN ${column} TEXT`);
+  }
   return db;
 }
 
