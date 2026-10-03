@@ -1,0 +1,11 @@
+# Large tarballs (next, @next/swc) exceed the 60 s default on slow Wi-Fi.
+fetchTimeout: 600000
+
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
+  sharp: false
+  unrs-resolver: false
+
+minimumReleaseAgeExclude:
+  - '@zoowork-ai/sdk@0.10.2'

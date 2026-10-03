@@ -1,0 +1,28 @@
+{
+  "shelves": [
+    {
+      "shelf": "Store shelves",
+      "products": [
+        { "name": "Alcatraz Island canvas tote", "description": "Sturdy natural canvas tote printed with a vintage Alcatraz Island map. Roomy enough for groceries or beach days; a practical gift for anyone.", "category": "Bags", "price_usd": null, "location": "bottom shelf, left", "status": "pending" },
+        { "name": "Golden Gate Bridge snow globe", "description": "Glass snow globe with the Golden Gate Bridge in International Orange over a wooden base. A classic keepsake for kids and collectors.", "category": "Home decor", "price_usd": 16, "location": "top shelf, left", "status": "pending" },
+        { "name": "Cable car Christmas ornament", "description": "Painted metal ornament shaped like a Powell-Hyde cable car, with a red hanging ribbon. Nice for ornament collectors.", "category": "Home decor", "price_usd": 14, "location": "top shelf, middle", "status": "approved" },
+        { "name": "1906 Earthquake photo history book", "description": "Hardcover photo history of the 1906 San Francisco earthquake and fire, with archival pictures and short essays. For history lovers.", "category": "Books", "price_usd": 32, "location": "middle shelf, right", "status": "approved" },
+        { "name": "Lombard Street 500-piece puzzle", "description": "Jigsaw puzzle of the crooked Lombard Street in bloom. A cozy gift for puzzle fans and families.", "category": "Toys", "price_usd": 19, "location": "middle shelf, left", "status": "approved" },
+        { "name": "Painted Ladies watercolor print", "description": "8x10 watercolor print of the Painted Ladies Victorian houses at Alamo Square, ready to frame. For art and architecture lovers.", "category": "Home decor", "price_usd": 28, "location": "middle shelf, middle", "status": "approved" },
+        { "name": "Fog City hoodie", "description": "Soft heather-gray pullover hoodie with a minimalist 'Fog City' print. Warm layer for visitors caught off guard by the fog.", "category": "Apparel", "price_usd": 45, "location": "rack, right", "status": "approved" },
+        { "name": "Ghirardelli chocolate gift box", "description": "Assorted Ghirardelli chocolate squares in a San Francisco gift box. An easy treat for anyone with a sweet tooth.", "category": "Snacks", "price_usd": 20, "location": "bottom shelf, right", "status": "approved" },
+        { "name": "Cable car bell keychain", "description": "Brass keychain with a tiny working cable car bell. A small, fun stocking stuffer.", "category": "Accessories", "price_usd": 8, "location": "counter display", "status": "approved" }
+      ]
+    },
+    {
+      "shelf": "Mini shelf",
+      "products": [
+        { "name": "Golden Gate history mug", "description": "Ceramic mug with a vintage illustration of the Golden Gate Bridge's 1937 opening day and a short history of its construction on the back. Great for coffee drinkers who love San Francisco history.", "category": "Mugs", "price_usd": 18, "location": "left", "status": "approved" },
+        { "name": "SF history postcard set", "description": "Set of 10 vintage-style postcards of historic San Francisco: the 1906 earthquake, early cable cars, and the Golden Gate under construction. For history buffs and letter writers.", "category": "Postcards", "price_usd": 12, "location": "center left", "status": "approved" },
+        { "name": "Cable car magnet", "description": "Colorful enamel fridge magnet of a classic San Francisco cable car. A tiny, affordable souvenir.", "category": "Magnets", "price_usd": 6, "location": "center", "status": "approved" },
+        { "name": "Sea lion plush", "description": "Soft gray sea lion plush inspired by the Pier 39 sea lions. A cuddly gift for kids.", "category": "Toys", "price_usd": 15, "location": "center right", "status": "approved" },
+        { "name": "Golden Gate Bridge enamel pin", "description": "International Orange enamel pin of the Golden Gate Bridge with a butterfly clasp. For pin collectors and jackets.", "category": "Accessories", "price_usd": 5, "location": "right", "status": "approved" }
+      ]
+    }
+  ]
+}

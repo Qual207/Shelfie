@@ -26,3 +26,10 @@ Thumbs.db
 # Logs / local
 *.log
 .local/
+
+# Shelfie runtime data (SQLite DB, uploaded videos, frames, demo snapshot)
+/data/
+
+# Next.js / TypeScript generated
+next-env.d.ts
+*.tsbuildinfo

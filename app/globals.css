@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent: #e8590c;
+  --color-accent-dark: #c2410c;
+  --color-ink: #111111;
+  --color-muted: #52525b;
+  --color-line: #e4e4e7;
+  --color-paper: #fafaf8;
+  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  font-size: 17px;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
