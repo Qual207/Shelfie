@@ -1,6 +1,8 @@
 // The demo shopper agent on Band. Its reasoning runs on a second ZooWork agent; this process
 // routes each decision to the store agent or back to the requester with a real @mention.
 import { Agent, GenericAdapter, loadAgentConfigFromEnv } from "@band-ai/sdk";
+import { getDb } from "@/lib/db";
+import { logMessage } from "@/lib/history";
 import { mentionOf, shortRoom, stripMentions } from "@/lib/band";
 import { decide, shopperAgentId } from "@/lib/shopper-agent";
 
@@ -21,7 +23,10 @@ const agent = Agent.create({
     const fromStore = message.senderId === storeId;
     const name = message.senderName ?? message.senderType;
     const text = stripMentions(message.content);
-    if (!fromStore) requesters.set(roomId, { id: message.senderId, name });
+    if (!fromStore) {
+      requesters.set(roomId, { id: message.senderId, name });
+      logMessage(getDb(), { room: roomId, from: "requester", to: "shopper", sender: name, text });
+    }
     const requester = requesters.get(roomId) ?? { id: message.senderId, name };
     console.log(`[room ${shortRoom(roomId)}] ${fromStore ? "store" : name}: ${text}`);
 
@@ -38,6 +43,13 @@ const agent = Agent.create({
           ? await mentionOf(tools, storeId, "presidio-souvenirs")
           : await mentionOf(tools, requester.id, requester.name);
       await tools.sendMessage(`${to.text} ${decision.message}`, to.ref);
+      logMessage(getDb(), {
+        room: roomId,
+        from: "shopper",
+        to: decision.to,
+        sender: "shopper-agent",
+        text: decision.message,
+      });
       console.log(`[room ${shortRoom(roomId)}] -> ${decision.to}: ${decision.message}`);
     } catch (err) {
       console.error(`[room ${shortRoom(roomId)}] failed:`, err);
