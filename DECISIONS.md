@@ -6,6 +6,7 @@ Assumptions, SDK findings and fallbacks, in the order they came up. Scope was ke
 
 - Node 22.16.0 is installed; the PRD says 22.20+. Band SDK needs ≥ 22.12, better-sqlite3 ≥ 22, ZooWork ≥ 20, so everything runs on 22.16. Upgrading is optional.
 - pnpm 11: `fetchTimeout: 600000` in `pnpm-workspace.yaml`. On slow Wi-Fi the 35–42 MB `next` and `@next/swc` tarballs exceeded the 60 s default and the install failed. pnpm itself added `minimumReleaseAgeExclude` for `@zoowork-ai/sdk@0.10.2` (published less than a day ago).
+- Norton Antivirus "Web/Mail Shield" scans HTTPS by re-signing certificates with its own root, which is in the Windows store but not in Node's bundled CA list. The agents crashed with `UNABLE_TO_VERIFY_LEAF_SIGNATURE` on the first ZooWork call. Fix: `nodeOptions: --use-system-ca` in `pnpm-workspace.yaml`, so every pnpm script also trusts the Windows store (Node ≥ 22.15). This is not a security bypass: certificates are still verified.
 - The ZooWork coding skill was not installed globally (no writes outside the project); it was read from GitHub (`SerendipityOneInc/zoowork-sdk-skills`) instead.
 - Next 16.3.8, React 19.2.8, Tailwind 4, TypeScript 5.9 (the create-next-app defaults). System fonts, so the demo laptop needs no font download.
 
