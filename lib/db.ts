@@ -51,6 +51,34 @@ const SCHEMA = `
     proposed_product_ids_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL
   );
+  -- Agent conversation history, written by the two agent processes (each logs what it sends,
+  -- plus the shopper logs the human's request), read by the analytics page.
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY,
+    room_id TEXT NOT NULL,
+    from_role TEXT NOT NULL CHECK (from_role IN ('requester', 'shopper', 'store')),
+    to_role TEXT NOT NULL CHECK (to_role IN ('requester', 'shopper', 'store')),
+    sender TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  -- Every catalog search the store agent ran: what shoppers wanted, within what budget, and
+  -- whether the shelf could answer.
+  CREATE TABLE IF NOT EXISTS searches (
+    id INTEGER PRIMARY KEY,
+    query TEXT NOT NULL,
+    max_price_usd REAL,
+    result_count INTEGER NOT NULL,
+    product_ids_json TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS insights (
+    id INTEGER PRIMARY KEY,
+    model TEXT NOT NULL,
+    result_json TEXT NOT NULL,
+    message_count INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  );
 `;
 
 export function openDb(file: string = DB_PATH): Db {

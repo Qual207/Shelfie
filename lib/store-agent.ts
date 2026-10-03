@@ -1,5 +1,6 @@
 import { getProduct, logQuestion, placeHold, searchCatalog, storeInfo } from "./catalog";
 import { getDb } from "./db";
+import { logMessage, logSearch } from "./history";
 import { STORE_INFO } from "./store-info";
 import { ensureAgent, jsonResult, runTurn, type AgentSpec, type SessionState } from "./zoowork";
 
@@ -93,6 +94,13 @@ export async function answerShopper(room: string, from: string, text: string): P
           category: typeof input.category === "string" ? input.category : undefined,
         });
         result.results.forEach((p) => shown.set(p.id, p.name));
+        const relevant = result.results.filter((p) => p.match_score > 0 && p.on_shelf);
+        logSearch(db, {
+          query: typeof input.query === "string" ? input.query : "",
+          max_price_usd: typeof input.max_price_usd === "number" ? input.max_price_usd : undefined,
+          matches: relevant.length,
+          productIds: relevant.map((p) => p.id),
+        });
         return jsonResult(result);
       }
       case "get_product": {
@@ -121,5 +129,6 @@ export async function answerShopper(room: string, from: string, text: string): P
   const lower = reply.toLowerCase();
   const proposed = [...shown].filter(([, name]) => lower.includes(name.toLowerCase())).map(([id]) => id);
   logQuestion(db, from, text, proposed);
+  logMessage(db, { room, from: "store", to: "shopper", sender: STORE_AGENT.name, text: reply });
   return reply;
 }
