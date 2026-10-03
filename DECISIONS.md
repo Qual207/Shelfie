@@ -21,7 +21,19 @@ Assumptions, SDK findings and fallbacks, in the order they came up. Scope was ke
 - Custom tool timeouts are 30–60 s, so a crashed process cannot park a run for the default 10 minutes. A failed turn drops that room's session so the next message starts clean.
 - Measured on the seed catalog: demo request 11.6 s cold (includes agent start), 7.1 s warm with a tool call; voice price 8.1 s cold. Warm replies meet the < 8 s target only narrowly; the Demo doc's "send while still on beat 3" fallback covers it.
 
-## Band (SDK 0.5.0), from source; not live-verified (no credentials yet)
+## Band setup (done through the Human API)
+
+- The `BAND_API_KEY` in `.env` is a human (account) key, not an agent key: agent endpoints answer 403 "requires agent authentication". The app does not read it.
+- With it, the two External agents were registered via `POST https://app.band.ai/api/v1/me/agents/register` (header `X-API-Key`). The live API wants the body wrapped as `{"agent": {name, description}}` (the docs show it unwrapped). The returned id and key went straight into `.env` as `STORE_*` / `SHOPPER_*`.
+- Rooms were created with `POST /me/chats` (`{"chat": {"title"}}`) and agents added with `POST /me/chats/{id}/participants` (`{"participant": {"participant_id", "role": "member"}}`): **Shelfie demo** and **Shelfie warm-up**, owner `jshaye`.
+- Live test (warm-up room, seed catalog): the full need → options → pick → hold → report flow ran. The first run exposed two prompt bugs, now fixed. (1) The shopper picked the cheapest option, while the script expects the mug; the budget is now a ceiling, not a target, and gifts prefer an everyday keepsake. (2) The store held all three options before the shopper chose; it now holds only one named product, and the shopper asks for options before asking for a hold.
+- `next.config.ts` sets `agentRules: false` so `next dev` stops writing AGENTS.md / CLAUDE.md into the repo.
+
+## Real video
+
+- `IMG_2658.MOV` is a 5.3 s HEVC portrait clip. HEVC doesn't play in Chrome, so it was converted to H.264 `IMG_2658.mp4` for playback. Scanning it found 21 products in 31 s (Sonnet 5.5, 10 frames), slightly over the 30 s target. Videos are git-ignored.
+
+## Band (SDK 0.5.0)
 
 - `loadAgentConfigFromEnv({ prefix: "STORE" })` reads `STORE_AGENT_ID` / `STORE_API_KEY` (same for `SHOPPER`).
 - The runtime's `autoSubscribeExistingRooms` defaults to **false**; both agents set it to true so they join the pre-created room after a restart.

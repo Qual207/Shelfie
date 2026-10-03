@@ -30,6 +30,11 @@ Thumbs.db
 # Shelfie runtime data (SQLite DB, uploaded videos, frames, demo snapshot)
 /data/
 
+# Shelf videos (large binaries)
+*.mov
+*.MOV
+*.mp4
+
 # Next.js / TypeScript generated
 next-env.d.ts
 *.tsbuildinfo

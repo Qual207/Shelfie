@@ -1,158 +1,105 @@
 # Manual steps
 
-Everything below has to be done by hand, in order. **[BLOCKING]** marks steps the demo cannot run without.
+What is left to do by hand, in order. **[BLOCKING]** marks steps the demo cannot run without.
 Run all commands from the project folder.
+
+## Already done (no action needed)
+
+- Dependencies installed; typecheck, lint, 16 unit tests and the production build pass.
+- ZooWork: smoke test passes (custom tool round trip + image input). Agents `presidio-souvenirs`, `shopper-agent` and `shelfie-vision` exist in your ZooWork project and update themselves on every start.
+- **Band:** the two External agents were registered with your `BAND_API_KEY` (Band's Human API). Their IDs and keys are in `.env` as `STORE_*` / `SHOPPER_*` (handles `@jshaye/presidio-souvenirs`, `@jshaye/shopper-agent`). Two rooms exist with both agents and you as owner: **Shelfie demo** (kept clean for the demo) and **Shelfie warm-up** (used for the live test).
+- **Live Band exchange verified** in Shelfie warm-up: request → 3 options → shopper picks the Golden Gate history mug → hold → report back. Store replies took 6.5–10.1 s.
+- **Your video:** `IMG_2658.MOV` (HEVC, which Chrome can't play) was converted to `IMG_2658.mp4` (H.264). It was scanned as the shelf "Store shelves": 21 products in 31 s, all **pending your review** on /scan. Videos are git-ignored.
 
 ## Not yet verified live
 
-- **Band.** There are no Band credentials in `.env`, so neither agent has connected to a Band room. The store and shopper processes are built from the Band SDK source (GenericAdapter, `loadAgentConfigFromEnv` with `STORE`/`SHOPPER` prefixes, @mention by participant id) but the room exchange has not run. Step 6 verifies it.
-- **Vision on a real video.** The scan and rescan prompts have not run on real shelf footage yet. What *is* verified: frames sent to a ZooWork agent as images through a custom tool are read correctly (`pnpm test:zoowork`). Step 7 verifies the real thing.
-- **Browser hardware.** Webcam recording, the mic button (Chrome Web Speech) and playback of your video file were not tested (no camera/mic here). The server side of voice pricing was verified.
-- **Verified:** ZooWork agent lifecycle and custom tool round trip; store agent answers to "a gift for my mom who loves SF history, under $25" on the seed catalog (2–3 fitting options with prices, reasons and last-seen times), the hold, and the "no longer on the shelf as of just now" answer after a rescan; voice price mapping ("the Alcatraz tote is twenty-two" → $22); all pages and API routes; typecheck, lint, 16 unit tests, production build.
+- Webcam recording, the 🎤 voice-price button (Chrome Web Speech) and in-browser video playback (needs a camera/mic; the server side of voice pricing is verified).
+- The mini-shelf rescan on real footage (the rescan logic is unit-tested and the vision path is verified on your video).
 
-## 1. Check the setup (already done on this laptop)
-
-```bash
-node --version      # 22.16 works (SDKs need >= 22.12); the PRD's 22.20+ is optional
-pnpm install        # only if node_modules is missing
-pnpm test:zoowork   # ~20 s: should print PASS twice
-```
-
-If `test:zoowork` fails with a credits or 401 error, add credits / rebind the key at https://platform.zoowork.ai. **[BLOCKING]**
-
-## 2. Create the two Band agents **[BLOCKING]**
-
-1. Go to https://app.band.ai and sign in.
-2. **Agents → New agent → External** (the hacker guide calls it "Remote Agent").
-   - Name: `presidio-souvenirs`. Description: "Agent for Presidio Souvenirs. Recommends products that are on the shelf right now."
-   - Copy the **API key** (shown once) and the **Agent UUID** from its details page.
-3. Create a second External agent named `shopper-agent` ("Alex's personal shopping agent"). Copy its key and UUID.
-4. Open `.env` and add (keep `ZOOWORK_API_KEY` as is):
-
-   ```
-   STORE_AGENT_ID=<presidio-souvenirs UUID>
-   STORE_API_KEY=<presidio-souvenirs key>
-   SHOPPER_AGENT_ID=<shopper-agent UUID>
-   SHOPPER_API_KEY=<shopper-agent key>
-   ```
-
-## 3. Create the Band rooms **[BLOCKING]**
-
-1. In Band, create a chat room for the demo. Add participants: **presidio-souvenirs**, **shopper-agent**, and your teammate's human account (Alex). If the teammate is in a different Band account, send them a contact request first.
-2. Create a second room with both agents for the warm-up message and the "rehearsal room" fallback.
-
-## 4. Put in the real store's details **[BLOCKING]**
-
-Edit `lib/store-info.ts`: real store name, address, hours. The store agent picks this up on its next start.
-
-## 5. Start everything
+## 1. Start everything
 
 ```bash
 pnpm demo
 ```
 
-This builds the app (~1 min), then runs three processes with labelled logs: `[web]` on http://localhost:3000, `[store]`, `[shopper]`. Wait for both `ZooWork … agent is running. Connecting to Band…` lines.
-To stop: Ctrl+C. (For hot reload while editing, use `pnpm demo:dev`.)
+It builds (~1 min), then runs `[web]` http://localhost:3000, `[store]` and `[shopper]` with labelled logs. Wait for both `ZooWork … agent is running. Connecting to Band…` lines. Stop with Ctrl+C. Use `pnpm demo:dev` while editing (hot reload).
 
-## 6. Verify a live Band exchange **[BLOCKING]**
+## 2. Put in the real store's details **[BLOCKING]**
 
-You can test with the sample catalog before you have your own:
+Edit `lib/store-info.ts` (name, address, hours; the placeholder is "Presidio Souvenirs"). Restart `pnpm demo` so the agents pick it up.
 
-```bash
-pnpm seed          # loads fixtures/seed-catalog.json (replaces the catalog!)
-```
+## 3. Review your store scan **[BLOCKING]**
 
-In the Band web app, in the demo room, as Alex:
+Open http://localhost:3000/scan (Chrome). The video plays on the left (1x/2x), the 21 cards on the right.
+- **Delete** duplicates/groups you don't want, **Edit** names, type prices in **Price needed** (no tags were readable).
+- For the demo: leave **one** product without a price (the voice moment) and **two** unapproved ("approve two"); approve the rest.
+- Note "found N of M products" for judge Q&A.
+- To redo it from scratch: stop `pnpm demo`, delete the `data` folder, start again, and upload `IMG_2658.mp4` on /scan (Shelf: `Store shelves`). Expect ~30 s.
 
-```
-@shopper-agent find a gift for my mom, she loves SF history, under $25, hold it for pickup at 6
-```
+## 4. Get your teammate into the demo room **[BLOCKING for the two-person script]**
 
-Expect, in order: shopper asks @presidio-souvenirs → store replies with 2–3 options (prices, reasons, last seen) → shopper asks to hold one → store confirms the hold → shopper reports back to Alex. Each store reply should take under ~10 s. The `[store]` and `[shopper]` terminal logs show every message, and http://localhost:3000/dashboard shows the question and the hold.
+In the Band web app, open **Shelfie demo** and add your teammate's account (the "Alex" driver); send them a contact request first if needed. Or drive it from your own account. The shopper uses the sender's Band display name for the hold, so with your account the hold says "Jason".
 
-If an agent never answers: check it is a participant in the room, check its terminal for an error, restart `pnpm demo`. Agents only see messages that @mention them.
+## 5. Set up and scan the mini shelf **[BLOCKING]**
 
-## 7. Process your store video **[BLOCKING]**
-
-1. **Make sure the browser can play it.** Chrome plays H.264 MP4. An iPhone `.mov` is usually HEVC and will not play (the scan still works, but you need playback for beat 2). Convert it once:
-
-   ```bash
-   ffmpeg -i "C:\path\to\your-video.mov" -c:v libx264 -crf 23 -preset fast -an -movflags +faststart store.mp4
-   ```
-
-2. If you ran `pnpm seed` in step 6, clear the sample data first: stop `pnpm demo`, delete the `data` folder, start `pnpm demo` again.
-3. Open http://localhost:3000/scan.
-4. **Shelf:** type `Store shelves` (any name works; it groups products).
-5. Click **Upload video** and pick your file. You'll see "Reading the shelf with ZooWork vision… N s"; expect about 20–40 s. Product cards appear on the right with the video on the left (1x/2x toggle).
-6. Review every card: **Edit** wrong names or descriptions, **Delete** false positives, type missing prices in the **Price needed** box.
-   - Write down "found N of M products" for the judge Q&A.
-   - For the demo, leave **one** product without a price (the voice moment, e.g. the Alcatraz tote) and leave **two** products unapproved ("approve two"). Approve the rest.
-7. If the scan errors, the message is shown on the page and in the `[web]` log. Retry once; if it keeps failing, send me the error.
-
-## 8. Set up and scan the mini shelf **[BLOCKING]**
-
-1. Put the 5–6 souvenirs in one row, spaced apart, facing the camera; mark positions with tape. Include the Golden Gate history mug and the SF history postcard set (or magnet). Keep the "new arrival" item **off** the shelf.
-2. On /scan: **Shelf:** `Mini shelf` → **Use webcam** (allow camera) → **Record 5 s**, or upload a short phone clip.
-3. Approve all, fix names so they read exactly as you want the agents to say them (e.g. "Golden Gate history mug"), and give the mug and the postcard set prices under $25.
-4. Check the store agent's answer without Band, as many times as you like:
+1. Put 5–6 souvenirs in one row, spaced, facing the camera; tape the positions. Include an SF-history mug ("Golden Gate history mug") and a close alternative (SF history postcard set or magnet). Keep the "new arrival" item **off** the shelf.
+2. On /scan: **Shelf:** `Mini shelf` → **Use webcam** (allow camera) → **Record 5 s** (or upload a phone clip; convert `.mov` first, see below).
+3. Approve all; make names read the way the agents should say them; give the mug and the postcard set prices under $25.
+4. Check the agent's answer without Band (repeat as needed):
 
    ```bash
    pnpm ask-store
    pnpm ask-store "find an SF history gift for my mom under $25" "please hold the Golden Gate history mug for Alex until 6 PM"
    ```
 
-   The rehearsal goal: the mug and the postcard set are the only SF-history options under $25. Edit descriptions or names until the answer is consistent.
+Converting a phone clip: `ffmpeg -i in.MOV -c:v libx264 -crf 23 -preset fast -an -movflags +faststart out.mp4`
 
-## 9. Record the fallback rescans (recommended)
+## 6. Record the fallback rescans (recommended)
 
-On http://localhost:3000/catalog-admin, **Shelf:** `Mini shelf`:
+On http://localhost:3000/catalog-admin with **Shelf:** `Mini shelf`:
+1. New-arrival item on the shelf → **Record 5 s** → diff shows **New: <item>** → do **not** Apply.
+2. New arrival **and** mug off → record → diff shows only **Gone from shelf: Golden Gate history mug** → do **not** Apply.
+3. Put the shelf back (mug on, new arrival off).
 
-1. Put the new-arrival item on the shelf, **Record 5 s**, check the diff shows **New: <item>**, do **not** click Apply.
-2. Take the new arrival **and** the mug off, record again, check the diff shows **Gone from shelf: Golden Gate history mug** only, do **not** Apply.
-3. Put the shelf back to its pre-demo state (mug on, new arrival off).
+If a live rescan misreads during the demo, pick the clip under **Recorded rescans**, click Apply, and say it's from rehearsal.
 
-During the demo, if a live rescan misreads, pick that clip from **Recorded rescans** and click Apply (and say it's from rehearsal).
+## 7. Test the voice price
 
-## 10. Test the voice price
+In Chrome on /scan: **🎤 Say a price** → allow the mic → "the <unpriced product> is twenty-two". Test in the room's noise. Then clear that price again (Edit → empty Price → Save).
 
-In **Chrome** on /scan, click **🎤 Say a price**, allow the mic, and say "the Alcatraz tote is twenty-two" (use your unpriced product's name). The card fills in. Test it in the presentation room's noise. If it fails, type the price on the card.
-Then remove the price again for the demo (Edit → clear Price → Save).
+## 8. Save the pre-demo snapshot **[BLOCKING]**
 
-## 11. Save the pre-demo snapshot **[BLOCKING]**
-
-When the catalog is exactly how the demo should start (one unpriced product, two pending, mini shelf without the new arrival, no stray holds):
+When the catalog is exactly the demo's starting state (one unpriced, two pending, mini shelf without the new arrival, no holds):
 
 ```bash
 pnpm snapshot
 ```
 
-## 12. Before every rehearsal and the real demo
+## 9. Before every rehearsal and the real demo
 
 ```bash
-pnpm reset         # restores the snapshot (safe while running)
-# then Ctrl+C and restart, so both agents start fresh conversations:
+pnpm reset      # restores the snapshot
+# Ctrl+C the running pnpm demo, then start it again so the agents begin fresh conversations:
 pnpm demo
 ```
 
-Right before going on, send a warm-up in the second room: `@presidio-souvenirs what are your hours?`
+Warm-up right before going on, in **Shelfie warm-up**: `@presidio-souvenirs what are your hours?`
 
-Driver's messages, saved for paste:
+Driver's messages for **Shelfie demo** (paste):
 
 ```
 @shopper-agent find a gift for my mom, she loves SF history, under $25, hold it for pickup at 6
 @shopper-agent I'm Sam. Find a gift for my mom, she loves SF history, under $25, hold it for pickup at 6
 ```
 
-## 13. Rehearse (from the Demo doc)
+## 10. Rehearse (ref_docs/demo.md)
 
-- Left window: http://localhost:3000/scan → /catalog-admin (beats 3 and 5: rescan with **Use webcam → Record 5 s**, then **Apply**) → /dashboard. Right window: the Band room.
-- Browser zoom 125%+, check readability from the back row; test lighting for the webcam.
-- Run the full script five times; ready when three runs in a row finish under 3:15 with no fallback.
-- Record one full successful run as the backup (laptop and phone).
+- Left window: /scan → /catalog-admin (beats 3 and 5: **Use webcam → Record 5 s → Apply**) → /dashboard. Right window: Band, room **Shelfie demo**.
+- Browser zoom 125%+, lighting checked for the webcam.
+- Five full runs; ready when three in a row finish under 3:15 with no fallback. Record one full successful run as backup.
 
-## Credentials, credits and permissions
+## Credentials, credits, permissions
 
-- ZooWork: key in `.env`; Organization credits at https://platform.zoowork.ai. Three ZooWork agents exist or will be created automatically: `presidio-souvenirs`, `shopper-agent`, `shelfie-vision`.
-- Band: free tier (up to 10 agents), the two External agents, the teammate's account in the room.
-- Chrome: camera and microphone permission for localhost.
+- ZooWork credits at https://platform.zoowork.ai (each scan, store reply and voice price is a billable turn).
+- Chrome camera + microphone permission for localhost.
 - The store's permission to film.
