@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-accent: #e8590c;
-  --color-accent-dark: #c2410c;
-  --color-ink: #111111;
-  --color-muted: #52525b;
-  --color-line: #e4e4e7;
-  --color-paper: #fafaf8;
-  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --color-accent: #4f46e5;
+  --color-accent-dark: #3730a3;
+  --color-ink: #0b1020;
+  --color-muted: #4b5568;
+  --color-line: #dfe3ee;
+  --color-paper: #f4f6fb;
+  --font-sans: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", ui-monospace, monospace;
 }
 
 html {
@@ -15,9 +16,44 @@ html {
 }
 
 body {
-  background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  background-color: var(--color-paper);
+  /* faint dot grid: the "control room" backdrop */
+  background-image: radial-gradient(circle, rgb(79 70 229 / 0.09) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+h1 {
+  letter-spacing: -0.025em;
+}
+
+/* cards lift a little off the grid */
+article,
+section.bg-white,
+div.bg-white {
+  box-shadow: 0 1px 2px rgb(11 16 32 / 0.04), 0 8px 24px -12px rgb(11 16 32 / 0.14);
+}
+
+article {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+article:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgb(11 16 32 / 0.05), 0 18px 36px -16px rgb(79 70 229 / 0.35);
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #4f46e5, #06b6d4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* dark stage behind cropped product photos */
+.specimen {
+  background: radial-gradient(circle at 50% 40%, #273152 0%, #0b1020 75%);
 }
 
 button {

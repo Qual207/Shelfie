@@ -39,10 +39,14 @@ export function ProductCard({ product, review }: { product: StateProduct; review
 
   return (
     <article className={`bg-white rounded-2xl border border-line overflow-hidden flex flex-col ${gone ? "opacity-60" : ""}`}>
-      <div className="aspect-[4/3] bg-zinc-100 relative">
-        {product.frame_path ? (
-          // eslint-disable-next-line @next/next/no-img-element -- frames are served from data/, not optimizable static assets
-          <img src={mediaUrl(product.frame_path)} alt={product.name} className={`w-full h-full object-cover ${gone ? "grayscale" : ""}`} />
+      <div className={`aspect-[4/3] relative ${product.crop_path ? "specimen" : "bg-zinc-100"}`}>
+        {product.crop_path || product.frame_path ? (
+          // eslint-disable-next-line @next/next/no-img-element -- photos are served from data/, not optimizable static assets
+          <img
+            src={mediaUrl((product.crop_path ?? product.frame_path)!)}
+            alt={product.name}
+            className={`w-full h-full ${product.crop_path ? "object-contain p-3" : "object-cover"} ${gone ? "grayscale" : ""}`}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-5xl text-zinc-300">▦</div>
         )}

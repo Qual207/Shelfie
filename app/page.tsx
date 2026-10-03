@@ -4,9 +4,9 @@ export default function Home() {
   return (
     <div className="max-w-5xl mx-auto py-16 flex flex-col gap-12">
       <div className="flex flex-col gap-6">
-        <p className="text-accent font-bold text-xl uppercase tracking-widest">The AI merchant for small stores</p>
+        <p className="font-mono text-accent font-bold text-lg uppercase tracking-[0.3em]">The AI merchant for small stores</p>
         <h1 className="text-7xl font-extrabold tracking-tight leading-[1.05]">
-          One minute of video, and any small store can sell to AI shoppers.
+          One minute of video, and any small store can sell to <span className="text-gradient">AI shoppers.</span>
         </h1>
         <p className="text-2xl text-muted max-w-3xl leading-snug">
           Shoppers now send AI agents to shop for them. Those agents find anything on Amazon, and nothing on the

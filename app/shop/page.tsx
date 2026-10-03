@@ -184,9 +184,9 @@ function Message({ message: m }: { message: RoomMessage }) {
 function HoldCard({ hold }: { hold: ShopHold }) {
   return (
     <div className="rounded-2xl bg-emerald-50 border-2 border-emerald-600 p-5 flex gap-5 items-center">
-      {hold.frame_path && (
-        // eslint-disable-next-line @next/next/no-img-element -- frames are served from data/
-        <img src={mediaUrl(hold.frame_path)} alt="" className="w-32 h-32 rounded-xl object-cover" />
+      {(hold.image_path ?? hold.frame_path) && (
+        // eslint-disable-next-line @next/next/no-img-element -- photos are served from data/
+        <img src={mediaUrl((hold.image_path ?? hold.frame_path)!)} alt="" className="specimen w-32 h-32 rounded-xl object-contain p-1" />
       )}
       <div className="flex flex-col gap-1">
         <div className="text-emerald-800 font-bold text-lg">✓ Reserved for pickup</div>

@@ -19,7 +19,7 @@ const stream = (file: string, range?: { start: number; end: number }) =>
 export async function GET(request: Request, ctx: RouteContext<"/api/media/[...path]">) {
   const parts = (await ctx.params).path;
   const file = path.resolve(DATA_DIR, ...parts);
-  if (!["frames", "uploads"].includes(parts[0]) || !file.startsWith(DATA_DIR + path.sep)) {
+  if (!["frames", "uploads", "products"].includes(parts[0]) || !file.startsWith(DATA_DIR + path.sep)) {
     return new Response("Not found", { status: 404 });
   }
   let size: number;
