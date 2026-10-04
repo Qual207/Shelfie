@@ -104,9 +104,5 @@ lib/          vision, imaging, catalog, SQLite, ZooWork and Band helpers
 components/   scan UI, webcam capture, voice price, charts
 scripts/      seeding and maintenance scripts
 fixtures/     sample catalog
-tests/        unit tests
 ```
 
----
-
-Built by **Jason Shaye** · October 2026 · ZooWork × Band hackathon
