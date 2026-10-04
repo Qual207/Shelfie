@@ -41,3 +41,5 @@ DEMO_GUIDE.md
 # Next.js / TypeScript generated
 next-env.d.ts
 *.tsbuildinfo
+
+.claude/
