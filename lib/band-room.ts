@@ -28,7 +28,7 @@ interface BandMessage {
 function config() {
   const { BAND_API_KEY, BAND_ROOM_ID, SHOPPER_AGENT_ID, STORE_AGENT_ID } = process.env;
   if (!BAND_API_KEY || !BAND_ROOM_ID || !SHOPPER_AGENT_ID) {
-    throw new Error("Set BAND_API_KEY, BAND_ROOM_ID and SHOPPER_AGENT_ID in .env (see MANUAL_STEPS.md)");
+    throw new Error("Set BAND_API_KEY, BAND_ROOM_ID and SHOPPER_AGENT_ID in .env (see README.md)");
   }
   return { apiKey: BAND_API_KEY, roomId: BAND_ROOM_ID, shopperId: SHOPPER_AGENT_ID, storeId: STORE_AGENT_ID };
 }

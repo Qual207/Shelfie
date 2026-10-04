@@ -1,4 +1,4 @@
-// The real store's details. Replace before the demo (see MANUAL_STEPS.md).
+// The real store's details. Replace before the demo.
 export const STORE_INFO = {
   name: "Presidio Souvenirs",
   address: "Presidio of San Francisco, San Francisco, CA",

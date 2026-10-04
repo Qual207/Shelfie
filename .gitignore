@@ -14,13 +14,19 @@ dist/
 build/
 .next/
 .cache/
+coverage/
 *.pyc
+
+# Next.js / TypeScript generated
+next-env.d.ts
+*.tsbuildinfo
 
 # OS / editor
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+.claude/
 *.swp
 
 # Logs / local
@@ -30,16 +36,13 @@ Thumbs.db
 # Shelfie runtime data (SQLite DB, uploaded videos, frames, demo snapshot)
 /data/
 
-# Personal demo walkthrough (not pushed)
-DEMO_GUIDE.md
-
 # Shelf videos (large binaries)
 *.mov
 *.MOV
 *.mp4
 
-# Next.js / TypeScript generated
-next-env.d.ts
-*.tsbuildinfo
-
-.claude/
+# Private working notes (not part of the public repo)
+DEMO_GUIDE.md
+DECISIONS.md
+MANUAL_STEPS.md
+ref_docs/
