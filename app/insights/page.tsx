@@ -5,14 +5,17 @@ import type { AnalyticsResponse } from "@/app/api/analytics/route";
 import type { InsightReport, StoredInsights } from "@/lib/insights";
 import { BarRows, Columns, Donut, Funnel } from "@/components/charts";
 import { api } from "@/components/client";
+import { Page } from "@/components/page";
+import { ResetDialog } from "@/components/reset-dialog";
 import { Elapsed, ErrorBanner } from "@/components/status";
 import { seenAgo } from "@/lib/time";
 
-const GREEN = "#2f9e44";
-const RED = "#e03131";
-const GREY = "#a1a1aa";
-const ORANGE = "#e8590c";
-const BLUE = "#1c7ed6";
+// Chart colors from the app palette: leaf = held, brick = lost, spruce = the shelf, ochre = shopper demand.
+const GREEN = "#2e8b57";
+const RED = "#b3412c";
+const GREY = "#a3ada8";
+const ORANGE = "#c99a00";
+const BLUE = "#1f5b4b";
 
 export default function InsightsPage() {
   const [data, setData] = useState<AnalyticsResponse | null>(null);
@@ -55,38 +58,37 @@ export default function InsightsPage() {
   const pct = (n: number | null | undefined) => (n == null ? "–" : `${Math.round(n * 100)}%`);
 
   return (
-    <div className="flex flex-col gap-8">
+    <Page
+      title="Insights"
+      intro="How shopper agents use your shelf, where sales were lost, and what to change this week."
+      actions={
+        <>
+          <ResetDialog trigger="button" />
+          <button onClick={generate} disabled={startedAt !== null || !k?.requests} className="btn btn-primary">
+            {startedAt ? <>Analysing <Elapsed since={startedAt} /></> : data?.insights ? "Run the analysis again" : "Analyse shopping history"}
+          </button>
+        </>
+      }
+    >
       <ErrorBanner message={error} />
-      <div className="flex items-end gap-4 flex-wrap">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight">Insights</h1>
-          <p className="text-lg text-muted mt-1">How shopper agents use your shelf, and what to do about it.</p>
-        </div>
-        <button
-          onClick={generate}
-          disabled={startedAt !== null || !k?.requests}
-          className="ml-auto bg-accent text-white rounded-xl px-6 py-3 text-lg font-bold hover:bg-accent-dark disabled:opacity-50"
-        >
-          {startedAt ? <>Analysing… <Elapsed since={startedAt} /></> : data?.insights ? "Re-run analysis" : "Analyse shopping history"}
-        </button>
-      </div>
 
       {a && k && a.message_count === 0 && (
-        <div className="bg-white rounded-2xl border border-line p-8 text-lg text-muted">
-          No shopper conversations logged yet. Run a request from the shopper page and this fills in.
+        <div className="panel p-8 text-lg text-muted">
+          No shopper conversations yet. Send a request from the shopper view, or add sample conversations under Clear test
+          data, and this page fills in.
         </div>
       )}
 
       {a && k && k.requests > 0 && (
         <>
-          <div className="grid md:grid-cols-4 gap-6">
+          <dl className="panel grid sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 lg:divide-x divide-line">
             <Tile label="Shopper requests" value={String(k.requests)} />
-            <Tile label="Led to a hold" value={pct(k.hold_rate)} accent />
-            <Tile label="Held value" value={`$${k.held_value_usd.toFixed(0)}`} />
-            <Tile label="Avg store reply" value={k.avg_store_reply_s == null ? "–" : `${k.avg_store_reply_s.toFixed(1)} s`} />
-          </div>
+            <Tile label="Ended in a hold" value={pct(k.hold_rate)} />
+            <Tile label="Value held for pickup" value={`$${k.held_value_usd.toFixed(0)}`} />
+            <Tile label="Average store reply" value={k.avg_store_reply_s == null ? "–" : `${k.avg_store_reply_s.toFixed(1)} s`} />
+          </dl>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid lg:grid-cols-2 gap-6">
             <Card title="From request to hold">
               <Funnel
                 stages={[
@@ -129,7 +131,7 @@ export default function InsightsPage() {
                   {a.products
                     .filter((p) => Object.keys(p.outranked_by).length)
                     .map((p) => (
-                      <li key={p.name} className="py-3 text-lg">
+                      <li key={p.name} className="py-3">
                         <b>{p.name}</b>
                         {p.price_usd != null && <span className="text-muted"> ${p.price_usd}</span>} lost to{" "}
                         {Object.entries(p.outranked_by)
@@ -139,7 +141,7 @@ export default function InsightsPage() {
                     ))}
                 </ul>
               ) : (
-                <p className="text-lg text-muted">No product has been passed over yet.</p>
+                <p className="text-muted">No product has been passed over yet.</p>
               )}
             </Card>
             <Card title="What shoppers can spend vs what your shelf costs">
@@ -152,14 +154,14 @@ export default function InsightsPage() {
               {a.unmet.length ? (
                 <ul className="divide-y divide-line">
                   {a.unmet.map((u) => (
-                    <li key={u.query} className="py-3 text-lg flex gap-3">
+                    <li key={u.query} className="py-3 flex gap-3">
                       <span>“{u.query}”{u.max_price_usd != null && <span className="text-muted"> under ${u.max_price_usd}</span>}</span>
                       <b className="ml-auto tabular-nums">{u.count}×</b>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-lg text-muted">Every search found something on the shelf.</p>
+                <p className="text-muted">Every search found something on the shelf.</p>
               )}
             </Card>
           </div>
@@ -173,21 +175,22 @@ export default function InsightsPage() {
           <ul className="divide-y divide-line">
             {[...a.episodes].reverse().map((e) => (
               <li key={e.id} className="py-3">
-                <button onClick={() => setOpen(open === e.id ? null : e.id)} className="w-full text-left flex gap-3 items-baseline">
-                  <span className={`text-sm font-bold uppercase rounded px-2 py-0.5 text-white ${e.outcome === "held" ? "bg-[#2f9e44]" : e.outcome === "no_sale" ? "bg-[#e03131]" : "bg-[#a1a1aa]"}`}>
-                    {e.outcome.replace("_", " ")}
+                <button onClick={() => setOpen(open === e.id ? null : e.id)} aria-expanded={open === e.id} className="w-full text-left flex gap-3 items-baseline rounded hover:bg-paper px-1 -mx-1">
+                  <span className="w-28 shrink-0 flex items-center gap-2 text-sm font-semibold">
+                    <span className={`w-2.5 h-2.5 rounded-full ${e.outcome === "held" ? "bg-leaf" : e.outcome === "no_sale" ? "bg-brick" : "bg-line"}`} aria-hidden />
+                    {OUTCOME[e.outcome]}
                   </span>
-                  <span className="text-lg flex-1">{e.request}</span>
-                  <span className="text-muted whitespace-nowrap">{seenAgo(e.started_at)}</span>
+                  <span className="flex-1">{e.request}</span>
+                  <span className="text-sm text-muted whitespace-nowrap">{seenAgo(e.started_at)}</span>
                 </button>
                 {open === e.id && (
-                  <div className="mt-3 flex flex-col gap-2 pl-2 border-l-4 border-line">
+                  <div className="mt-3 ml-1 flex flex-col gap-2 pl-4 border-l-2 border-line max-w-[75ch]">
                     {e.messages.map((m, i) => (
-                      <p key={i} className="text-base leading-snug">
-                        <b className="capitalize">{m.from}:</b> {m.text}
+                      <p key={i} className="leading-snug">
+                        <b>{SPEAKER[m.from]}:</b> {m.text}
                       </p>
                     ))}
-                    {e.held && <p className="text-base font-semibold text-[#2f9e44]">Held: {e.held.product} for {e.held.customer}</p>}
+                    {e.held && <p className="font-semibold text-leaf">Held {e.held.product} for {e.held.customer}</p>}
                   </div>
                 )}
               </li>
@@ -195,40 +198,50 @@ export default function InsightsPage() {
           </ul>
         </Card>
       )}
-    </div>
+    </Page>
   );
 }
+
+const OUTCOME = { held: "Held", no_sale: "No sale", in_progress: "In progress" };
+const SPEAKER = { requester: "Shopper", shopper: "Shopper agent", store: "Store agent" };
 
 function Report({ stored, stale }: { stored: StoredInsights; stale: boolean }) {
   const r: InsightReport = stored.report;
   const sections: { title: string; color: string; items: InsightReport["went_well"] }[] = [
     { title: "What went well", color: GREEN, items: r.went_well },
-    { title: "Where we lost the sale", color: RED, items: r.lost_sales },
-    { title: "How shopper agents behave", color: BLUE, items: r.shopper_behavior },
-    { title: "Demand we couldn't meet", color: ORANGE, items: r.unmet_demand },
+    { title: "Where sales were lost", color: RED, items: r.lost_sales },
+    { title: "How shopper agents decide", color: BLUE, items: r.shopper_behavior },
+    { title: "Demand the shelf couldn't meet", color: ORANGE, items: r.unmet_demand },
   ];
   return (
-    <section className="flex flex-col gap-6">
-      <div className="bg-ink text-white rounded-2xl p-8">
-        <div className="text-sm font-semibold uppercase tracking-wide text-white/60">
-          Analyst report · {stored.model.replace("litellm/", "")} · {seenAgo(stored.created_at)}
-          {stale && <span className="ml-3 rounded bg-accent text-white px-2 py-0.5">New conversations since. Re-run for fresh insights</span>}
-        </div>
-        <h2 className="text-3xl font-extrabold mt-2 leading-tight">{r.headline}</h2>
-        <p className="text-lg text-white/80 mt-3 max-w-4xl">{r.summary}</p>
+    <section className="flex flex-col gap-6" aria-labelledby="report-title">
+      <div className="panel p-7 border-l-4 border-l-accent">
+        <p className="text-sm text-muted">
+          Analyst report by {stored.model.replace("litellm/", "")}, written {seenAgo(stored.created_at)}
+        </p>
+        {stale && (
+          <p className="notice notice-ok mt-3 text-sm">There are new conversations since this report. Run the analysis again to include them.</p>
+        )}
+        <h2 id="report-title" className="text-3xl leading-tight mt-3 max-w-[40ch]">
+          {r.headline}
+        </h2>
+        <p className="text-lg text-muted mt-3 max-w-[70ch] leading-relaxed">{r.summary}</p>
       </div>
       <div className="grid lg:grid-cols-2 gap-6">
         {sections
           .filter((s) => s.items.length)
           .map((s) => (
-            <div key={s.title} className="bg-white rounded-2xl border border-line p-6" style={{ borderTop: `6px solid ${s.color}` }}>
-              <h3 className="text-2xl font-bold mb-3">{s.title}</h3>
+            <div key={s.title} className="panel p-6">
+              <h3 className="text-xl flex items-center gap-2 mb-3">
+                <span className="w-3 h-3 rounded-sm" style={{ background: s.color }} aria-hidden />
+                {s.title}
+              </h3>
               <ul className="flex flex-col gap-4">
                 {s.items.map((item) => (
                   <li key={item.title}>
-                    <div className="text-lg font-bold">{item.title}</div>
-                    <p className="text-lg leading-snug">{item.detail}</p>
-                    {item.evidence && <p className="text-base text-muted mt-1">Evidence: {item.evidence}</p>}
+                    <div className="font-semibold">{item.title}</div>
+                    <p className="leading-snug mt-0.5">{item.detail}</p>
+                    {item.evidence && <p className="text-sm text-muted mt-1">Evidence: {item.evidence}</p>}
                   </li>
                 ))}
               </ul>
@@ -237,16 +250,18 @@ function Report({ stored, stale }: { stored: StoredInsights; stale: boolean }) {
       </div>
       {r.recommendations.length > 0 && (
         <Card title="What to do next">
-          <ol className="flex flex-col gap-4">
+          <ol className="flex flex-col gap-5">
             {r.recommendations.map((rec, i) => (
               <li key={i} className="flex gap-4">
-                <span className="text-3xl font-extrabold text-accent tabular-nums">{i + 1}</span>
-                <div>
-                  <div className="text-lg font-bold">
-                    {rec.action}{" "}
-                    <span className="text-sm uppercase font-bold align-middle rounded px-2 py-0.5 bg-line text-muted">{rec.impact} impact</span>
+                <span className="wide text-2xl font-bold text-accent w-7 shrink-0">{i + 1}</span>
+                <div className="max-w-[75ch]">
+                  <div className="font-semibold text-lg">
+                    {rec.action}
+                    <span className="ml-2 align-middle text-sm font-medium text-muted border border-line rounded-full px-2 py-0.5">
+                      {rec.impact} impact
+                    </span>
                   </div>
-                  <p className="text-lg text-muted leading-snug">{rec.why}</p>
+                  <p className="text-muted leading-snug mt-0.5">{rec.why}</p>
                 </div>
               </li>
             ))}
@@ -259,18 +274,18 @@ function Report({ stored, stale }: { stored: StoredInsights; stale: boolean }) {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="bg-white rounded-2xl border border-line p-6">
-      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+    <section className="panel p-6">
+      <h2 className="text-xl mb-4">{title}</h2>
       {children}
     </section>
   );
 }
 
-function Tile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Tile({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`rounded-2xl p-6 ${accent ? "bg-accent text-white" : "bg-white border border-line"}`}>
-      <div className="text-5xl font-extrabold tabular-nums">{value}</div>
-      <div className={`text-lg font-semibold mt-1 ${accent ? "text-white/90" : "text-muted"}`}>{label}</div>
+    <div className="px-6 py-5">
+      <dt className="text-muted">{label}</dt>
+      <dd className="wide text-4xl font-bold mt-1">{value}</dd>
     </div>
   );
 }

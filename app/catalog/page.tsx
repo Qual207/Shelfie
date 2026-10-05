@@ -11,7 +11,7 @@ export default function CatalogPage() {
     .prepare("SELECT * FROM products WHERE status = 'approved' AND on_shelf = 1 ORDER BY category, name")
     .all() as Product[];
   return (
-    <article className="max-w-3xl font-serif text-lg leading-relaxed">
+    <article className="max-w-3xl mx-auto px-6 py-10 font-serif text-lg leading-relaxed">
       <h1 className="text-3xl font-bold">{STORE_INFO.name}</h1>
       <p>
         {STORE_INFO.address}. {STORE_INFO.hours}.

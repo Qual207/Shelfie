@@ -72,6 +72,11 @@ const SCHEMA = `
     product_ids_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL
   );
+  -- Small key/value flags shared by the web app and the agent processes (see lib/reset.ts).
+  CREATE TABLE IF NOT EXISTS meta (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
   CREATE TABLE IF NOT EXISTS insights (
     id INTEGER PRIMARY KEY,
     model TEXT NOT NULL,
