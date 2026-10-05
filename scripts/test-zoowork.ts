@@ -2,13 +2,26 @@
 // custom-tool round trip, then check that an image returned by a custom tool is seen.
 // Usage: pnpm test:zoowork [model]   (default: litellm/claude-haiku-4-5)
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { ensureAgent, jsonResult, runTurn, zoowork, type SessionState } from "@/lib/zoowork";
 
 const model = process.argv[2] ?? "litellm/claude-haiku-4-5";
 const SECRET = 4817;
 
+// Bold fonts on Windows, macOS and Linux. ffmpeg builds without drawtext (Homebrew's default)
+// render the red square only, and the text check is skipped.
+const FONT = [
+  "C:/Windows/Fonts/arialbd.ttf",
+  "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+  "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+].find((f) => existsSync(f));
+const WITH_TEXT = FONT !== undefined && spawnSync("ffmpeg", ["-hide_banner", "-filters"]).stdout.toString().includes("drawtext");
+
 // A synthetic price tag, rendered in memory by ffmpeg.
 function tagImage(): string {
+  const text = WITH_TEXT
+    ? `,drawtext=fontfile='${FONT!.replace(/:/g, "\\:")}':text='MUG  $17':fontsize=72:fontcolor=black:x=(w-text_w)/2:y=(h-text_h)/2`
+    : "";
   const out = spawnSync(
     "ffmpeg",
     [
@@ -16,8 +29,7 @@ function tagImage(): string {
       "-f", "lavfi", "-i", "color=c=white:s=640x360",
       "-frames:v", "1",
       "-vf",
-      "drawbox=x=40:y=40:w=120:h=120:color=red:t=fill," +
-        "drawtext=fontfile='C\\:/Windows/Fonts/arialbd.ttf':text='MUG  $17':fontsize=72:fontcolor=black:x=(w-text_w)/2:y=(h-text_h)/2",
+      `drawbox=x=40:y=40:w=120:h=120:color=red:t=fill${text}`,
       "-f", "image2pipe", "-vcodec", "png", "pipe:1",
     ],
     { maxBuffer: 10 * 1024 * 1024 },
@@ -92,7 +104,8 @@ async function main() {
       ),
     );
     console.log(`  reply: ${second}`);
-    const imageOk = /17/.test(second) && /red/i.test(second);
+    const imageOk = /red/i.test(second) && (!WITH_TEXT || /17/.test(second));
+    if (!WITH_TEXT) console.log("  (this ffmpeg has no drawtext, so only the square's color was checked)");
 
     console.log(`\nJSON custom tool round trip: ${jsonOk ? "PASS" : "FAIL"}`);
     console.log(`Image in custom tool result read by model: ${imageOk ? "PASS" : "FAIL"}`);

@@ -1,4 +1,6 @@
+import { getDb } from "./db";
 import { parseModelJson } from "./json";
+import { agentMemoryEpoch } from "./reset";
 import { STORE_INFO } from "./store-info";
 import { ensureAgent, runTurn, type AgentSpec, type SessionState } from "./zoowork";
 
@@ -38,9 +40,15 @@ interface RoomState {
   storeMessages: number;
 }
 const rooms = new Map<string, RoomState>();
+let memoryEpoch: string | undefined;
 
 /** Decides the shopper's next message for a room, given a message from the requester or the store. */
 export async function decide(room: string, from: "requester" | "store", name: string, text: string): Promise<Decision> {
+  const epoch = agentMemoryEpoch(getDb());
+  if (epoch !== memoryEpoch) {
+    rooms.clear(); // test data was cleared or restored: forget the old conversations
+    memoryEpoch = epoch;
+  }
   const state = rooms.get(room) ?? { session: {}, storeMessages: 0 };
   rooms.set(room, state);
   if (from === "requester") state.storeMessages = 0;

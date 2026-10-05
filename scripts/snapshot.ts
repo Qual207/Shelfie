@@ -1,9 +1,6 @@
-// Saves the current database as the pre-demo snapshot that `pnpm reset` restores.
-import { rmSync } from "node:fs";
-import path from "node:path";
-import { DATA_DIR, getDb } from "@/lib/db";
+// Saves the current database and its photos/videos as the starting point that `pnpm reset` restores.
+import { getDb } from "@/lib/db";
+import { SNAPSHOT_DB, saveSnapshot } from "@/lib/reset";
 
-const target = path.join(DATA_DIR, "snapshot.db");
-rmSync(target, { force: true });
-getDb().prepare("VACUUM INTO ?").run(target);
-console.log(`Saved the demo snapshot to ${target}.`);
+saveSnapshot(getDb());
+console.log(`Saved the starting point to ${SNAPSHOT_DB}.`);

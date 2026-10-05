@@ -57,16 +57,15 @@ export function Capture({ busy, onCapture }: { busy: boolean; onCapture: (form: 
     onCapture(form);
   }
 
-  const button = "px-5 py-3 rounded-xl text-lg font-semibold disabled:opacity-40";
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-3">
-        <label className={`${button} bg-ink text-white ${busy ? "opacity-40 pointer-events-none" : "hover:bg-zinc-800"}`}>
+        <label className={`btn btn-primary btn-lg ${busy ? "opacity-45 pointer-events-none" : "cursor-pointer"}`}>
           Upload video
           <input
             type="file"
             accept="video/*"
-            className="hidden"
+            className="sr-only"
             disabled={busy}
             onChange={(e) => {
               onFile(e.target.files?.[0]);
@@ -75,11 +74,11 @@ export function Capture({ busy, onCapture }: { busy: boolean; onCapture: (form: 
           />
         </label>
         {cameraOn ? (
-          <button disabled={busy || countdown !== null} onClick={recordClip} className={`${button} bg-accent hover:bg-accent-dark text-white`}>
-            {countdown !== null ? `Recording… ${countdown}` : `Record ${CLIP_SECONDS} s`}
+          <button disabled={busy || countdown !== null} onClick={recordClip} className="btn btn-lg btn-danger">
+            {countdown !== null ? `Recording, ${countdown} s left` : `Record ${CLIP_SECONDS} s`}
           </button>
         ) : (
-          <button disabled={busy} onClick={startCamera} className={`${button} border-2 border-ink hover:bg-white`}>
+          <button disabled={busy} onClick={startCamera} className="btn btn-lg">
             Use webcam
           </button>
         )}
@@ -90,10 +89,10 @@ export function Capture({ busy, onCapture }: { busy: boolean; onCapture: (form: 
           autoPlay
           muted
           playsInline
-          className={`w-full max-w-md rounded-xl bg-black ${countdown !== null ? "ring-4 ring-accent" : ""}`}
+          className={`w-full max-w-md rounded-lg bg-ink ${countdown !== null ? "ring-4 ring-brick" : ""}`}
         />
       )}
-      {error && <p className="text-red-700 font-medium">{error}</p>}
+      {error && <p className="notice notice-error">{error}</p>}
     </div>
   );
 }
