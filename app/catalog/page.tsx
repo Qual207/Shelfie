@@ -11,7 +11,7 @@ export default function CatalogPage() {
     .prepare("SELECT * FROM products WHERE status = 'approved' AND on_shelf = 1 ORDER BY category, name")
     .all() as Product[];
   return (
-    <article className="max-w-3xl font-serif text-lg leading-relaxed">
+    <article className="max-w-3xl mx-auto px-6 py-10 font-serif text-lg leading-relaxed">
       <h1 className="text-3xl font-bold">{STORE_INFO.name}</h1>
       <p>
         {STORE_INFO.address}. {STORE_INFO.hours}.
@@ -22,6 +22,10 @@ export default function CatalogPage() {
       <ul className="list-disc pl-6 mt-4">
         {products.map((p) => (
           <li key={p.id} id={`product-${p.id}`} className="mb-3">
+            {(p.image_path ?? p.crop_path) && (
+              // eslint-disable-next-line @next/next/no-img-element -- photos are served from data/
+              <img src={`/api/media/${p.image_path ?? p.crop_path}`} alt={p.name} className="block w-40 h-40 object-contain my-2" />
+            )}
             <b>{p.name}</b>, {p.price_usd === null ? "price on request" : `$${p.price_usd.toFixed(2)}`}. {p.category}. {p.description}{" "}
             Last seen on the shelf {seenAgo(p.last_seen_at)}.
           </li>

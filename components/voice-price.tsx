@@ -50,17 +50,20 @@ export function VoicePrice({ disabled }: { disabled: boolean }) {
   }
 
   return (
-    <div className="flex items-center gap-4 flex-wrap">
+    <div className="flex items-center gap-3 flex-wrap justify-end">
+      {message && (
+        <span role="status" className={`font-semibold ${message.ok ? "text-accent" : "text-brick"}`}>
+          {message.text}
+        </span>
+      )}
       <button
         onClick={listen}
         disabled={disabled || phase !== "idle"}
-        className={`px-5 py-3 rounded-xl text-lg font-semibold text-white disabled:opacity-60 ${
-          phase === "listening" ? "bg-red-600 animate-pulse" : "bg-ink hover:bg-zinc-800"
-        }`}
+        className={`btn ${phase === "listening" ? "btn-danger" : ""}`}
+        title={disabled ? "Every product already has a price" : "Say a product and its price, like “the Alcatraz tote is twenty-two”"}
       >
-        {phase === "listening" ? "● Listening…" : phase === "matching" ? "Matching…" : "🎤 Say a price"}
+        {phase === "listening" ? "Listening…" : phase === "matching" ? "Matching…" : "Say a price"}
       </button>
-      {message && <span className={`text-lg font-semibold ${message.ok ? "text-emerald-700" : "text-red-700"}`}>{message.text}</span>}
     </div>
   );
 }

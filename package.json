@@ -21,6 +21,7 @@
     "seed:history": "tsx scripts/seed-history.ts",
     "snapshot": "tsx scripts/snapshot.ts",
     "reset": "tsx scripts/reset.ts",
+    "band-setup": "tsx --env-file=.env scripts/band-setup.ts",
     "ask-store": "tsx --env-file=.env scripts/ask-store.ts",
     "test:zoowork": "tsx --env-file=.env scripts/test-zoowork.ts",
     "crop": "tsx --env-file=.env scripts/crop.ts"

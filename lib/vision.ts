@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { ScannedProduct } from "./catalog";
 import { DATA_DIR } from "./db";
+import { FRAMES_PER_PAGE } from "./sampling";
 import { askJson, ensureAgent, type AgentSpec, type ToolHandler } from "./zoowork";
 
 // Vision runs on a ZooWork agent: the frames reach the model as base64 images in the result of
@@ -17,8 +18,11 @@ const VISION_AGENT: AgentSpec = {
   tools: [
     {
       name: "get_frames",
-      description: "Returns the frames of the current shelf video as images, frame 0 first.",
-      input_schema: { type: "object", properties: {} },
+      description: `Returns the images for the current task in order, ${FRAMES_PER_PAGE} per page. Call it with page 0, then 1, and so on, until you have seen every image the task mentions.`,
+      input_schema: {
+        type: "object",
+        properties: { page: { type: "integer", description: "0 for the first images, 1 for the next, …" } },
+      },
       timeoutMs: 60_000,
     },
   ],
@@ -46,15 +50,15 @@ const PRODUCT_RULES = `- name: specific and recognizable, as a shopper would say
 - confidence: 0 to 1, how sure you are this is a real, distinct product.`;
 
 function scanPrompt(frameCount: number): string {
-  return `These frames are from one continuous video of a small store's shelves. Call get_frames to see them: ${frameCount} frames, numbered 0 to ${frameCount - 1} in the order returned.
-List every DISTINCT product. The same product in several frames is ONE product.
+  return `These frames are from one continuous video of a small store's shelves: ${frameCount} frames, numbered 0 to ${frameCount - 1} in the order returned. To see them all, ${pagesHint(frameCount)}.
+List every DISTINCT product. The camera moves, so the same product shows up in several frames: list it ONCE, with the frame where it is clearest. Never list the same item twice under different names.
 For each, write a short shopper-facing description (what it is, material, design, who it suits).
 ${PRODUCT_RULES}
 Return JSON only, in this shape: {"products":[${PRODUCT_FORMAT}]}`;
 }
 
 function rescanPrompt(frameCount: number, catalog: CatalogEntry[]): string {
-  return `Here is the store's current catalog for one shelf, and new frames of that same shelf. Call get_frames to see the ${frameCount} new frames, numbered 0 to ${frameCount - 1}.
+  return `Here is the store's current catalog for one shelf, and new frames of that same shelf. There are ${frameCount} new frames, numbered 0 to ${frameCount - 1}; to see them all, ${pagesHint(frameCount)}.
 For each catalog product, return whether it appears in the new frames: "seen" or "not_seen". Use not_seen only when the product is absent from every frame.
 Then list any NEW products that are not in the catalog, in the scan format below. Never list a catalog product as new.
 ${PRODUCT_RULES}
@@ -74,11 +78,22 @@ export interface RescanResult {
   new_products: ScannedProduct[];
 }
 
-/** A custom-tool handler that returns these images (paths relative to data/), in order. */
+/** How to page through n images, for the prompt: "call get_frames with page 0 (images 0-11) and page 1 (12-19)". */
+export function pagesHint(n: number, tool = "get_frames"): string {
+  const pages = Math.ceil(n / FRAMES_PER_PAGE);
+  if (pages <= 1) return `call ${tool} once (page 0)`;
+  const parts = Array.from({ length: pages }, (_, p) => `page ${p} (images ${p * FRAMES_PER_PAGE}-${Math.min(n, (p + 1) * FRAMES_PER_PAGE) - 1})`);
+  return `call ${tool} with ${parts.join(", ")}`;
+}
+
+/** A custom-tool handler that returns these images (paths relative to data/) in order, one page per call. */
 export function imageTool(toolName: string, files: string[]): ToolHandler {
-  return async (name) => {
+  return async (name, input) => {
     if (name !== toolName) throw new Error(`Unknown tool ${name}`);
-    return files.map((file) => ({
+    const page = Number.isInteger(input.page) ? (input.page as number) : 0;
+    const slice = files.slice(page * FRAMES_PER_PAGE, (page + 1) * FRAMES_PER_PAGE);
+    if (slice.length === 0) return [{ type: "text" as const, text: `There are only ${files.length} images; page ${page} is empty.` }];
+    return slice.map((file) => ({
       type: "image" as const,
       source: {
         type: "base64" as const,
@@ -91,7 +106,8 @@ export function imageTool(toolName: string, files: string[]): ToolHandler {
 
 const framesTool = (frames: string[]) => imageTool("get_frames", frames);
 
-async function askVision(prompt: string, onTool?: ToolHandler) {
+/** One JSON turn on the vision agent (Sonnet). Images reach it through the get_frames tool. */
+export async function askVision(prompt: string, onTool?: ToolHandler) {
   return askJson(await visionAgentId(), prompt, onTool);
 }
 

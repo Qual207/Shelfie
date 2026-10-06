@@ -3,39 +3,50 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { STORE_INFO } from "@/lib/store-info";
+import { ResetDialog } from "./reset-dialog";
 
 const LINKS = [
-  { href: "/scan", label: "Scan" },
+  { href: "/scan", label: "Scan a shelf" },
   { href: "/catalog-admin", label: "Catalog" },
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard", label: "Holds and questions" },
   { href: "/insights", label: "Insights" },
 ] as const;
 
+/** The store owner's sidebar. The landing page and the shopper's window have their own chrome. */
 export function Nav() {
   const pathname = usePathname();
-  if (pathname === "/shop") return null; // the shopper's window is not the store's app
+  if (pathname === "/" || pathname === "/shop" || pathname === "/catalog") return null;
   return (
-    <header className="sticky top-0 z-20 bg-ink/95 backdrop-blur border-b border-white/10">
-      <div className="max-w-[1500px] mx-auto px-6 h-16 flex items-center gap-8">
-        <Link href="/" className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-white">
-          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee] animate-pulse" />
-          <span>Shelf<span className="text-gradient">ie</span></span>
+    <aside className="lg:w-64 lg:shrink-0 lg:h-screen lg:sticky lg:top-0 bg-surface border-b lg:border-b-0 lg:border-r border-line flex lg:flex-col">
+      <div className="px-5 py-4 lg:py-6 lg:border-b border-line">
+        <Link href="/" className="wide text-2xl font-extrabold tracking-tight text-accent">
+          Shelfie
         </Link>
-        <nav className="flex gap-1">
-          {LINKS.map((link) => (
+        <p className="hidden lg:block text-sm text-muted mt-1 leading-snug">{STORE_INFO.name}</p>
+      </div>
+      <nav className="flex lg:flex-col gap-1 p-2 lg:p-3 overflow-x-auto flex-1" aria-label="Store">
+        {LINKS.map((link) => {
+          const active = pathname === link.href;
+          return (
             <Link
               key={link.href}
               href={link.href}
-              className={`px-4 py-2 rounded-lg text-lg font-semibold ${
-                pathname === link.href ? "bg-white/12 text-white ring-1 ring-white/20" : "text-slate-300 hover:text-white"
+              aria-current={active ? "page" : undefined}
+              className={`px-3 py-2 rounded-md font-semibold whitespace-nowrap ${
+                active ? "bg-accent-tint text-accent-dark" : "text-muted hover:text-ink hover:bg-paper"
               }`}
             >
               {link.label}
             </Link>
-          ))}
-        </nav>
-        <span className="ml-auto font-mono text-sm uppercase tracking-widest text-cyan-300">● live · {STORE_INFO.name}</span>
+          );
+        })}
+      </nav>
+      <div className="hidden lg:flex flex-col gap-2 p-3 border-t border-line">
+        <Link href="/shop" target="_blank" className="px-3 py-2 rounded-md font-semibold text-muted hover:text-ink hover:bg-paper">
+          Open shopper view
+        </Link>
+        <ResetDialog trigger="sidebar" />
       </div>
-    </header>
+    </aside>
   );
 }

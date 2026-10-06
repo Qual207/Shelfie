@@ -1,5 +1,6 @@
 import { getProduct, logQuestion, placeHold, searchCatalog, storeInfo } from "./catalog";
 import { getDb } from "./db";
+import { agentMemoryEpoch } from "./reset";
 import { logMessage, logSearch } from "./history";
 import { STORE_INFO } from "./store-info";
 import { ensureAgent, jsonResult, runTurn, type AgentSpec, type SessionState } from "./zoowork";
@@ -77,10 +78,16 @@ export function storeAgentId(): Promise<string> {
 
 // One ZooWork session per Band room, kept for the life of the process.
 const sessions = new Map<string, SessionState>();
+let memoryEpoch: string | undefined;
 
 /** Runs one store-agent turn for a room and logs it as an agent question. Returns the reply. */
 export async function answerShopper(room: string, from: string, text: string): Promise<string> {
   const db = getDb();
+  const epoch = agentMemoryEpoch(db);
+  if (epoch !== memoryEpoch) {
+    sessions.clear(); // test data was cleared or restored: forget the old conversations
+    memoryEpoch = epoch;
+  }
   const session = sessions.get(room) ?? {};
   sessions.set(room, session);
   const shown = new Map<number, string>(); // products the tools returned this turn

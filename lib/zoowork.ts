@@ -19,6 +19,10 @@ export interface AgentSpec {
   tools?: CustomToolDeclaration[];
   /** ZooWork built-in tools to allow besides our custom tools (e.g. image_generate). */
   builtinTools?: string[];
+  /** Catalog Skills by name (e.g. "designer"). ZooWork only accepts them when the agent is created. */
+  skills?: string[];
+  /** Give the agent its own persistent /workspace sandbox (needed for files and exec). */
+  sandbox?: boolean;
 }
 
 export type ToolHandler = (
@@ -54,6 +58,7 @@ export async function ensureAgent(spec: AgentSpec): Promise<string> {
     // Only the tools we name: no web search or stray sandbox tools, and a smaller prompt.
     tool_policy: allowed.length ? { allow: allowed } : { deny: ["*"] },
     include_global_skills: false,
+    ...(spec.sandbox ? { sandbox: { scope: "agent" as const } } : {}),
   };
 
   let agentId = (await zc.listAgents({ labels })).data[0]?.agent_id;
@@ -64,7 +69,7 @@ export async function ensureAgent(spec: AgentSpec): Promise<string> {
     for (let attempt = 1; ; attempt++) {
       try {
         const created = await zc.createAgent(
-          { resource: { name: spec.name, labels, ...config } },
+          { resource: { name: spec.name, labels, ...config, ...(spec.skills ? { skills: await skillRefs(spec.skills) } : {}) } },
           idempotencyKey,
         );
         agentId = created.agent_id;
@@ -79,6 +84,41 @@ export async function ensureAgent(spec: AgentSpec): Promise<string> {
   await zc.startAgent(agentId);
   await zc.waitUntilRunning(agentId, { timeoutMs: 60_000 });
   return agentId;
+}
+
+async function skillRefs(names: string[]): Promise<{ skill_id: string }[]> {
+  return Promise.all(
+    names.map(async (name) => {
+      const skill = (await zoowork().listSkills({ q: name })).find((s) => s.name === name);
+      if (!skill) throw new Error(`ZooWork has no Skill named ${name}`);
+      return { skill_id: skill.skill_id };
+    }),
+  );
+}
+
+/** Writes a local file into the agent's sandbox, in chunks small enough for one exec argument. */
+export async function uploadToSandbox(agentId: string, data: Buffer, target: string): Promise<void> {
+  const zc = zoowork();
+  const b64 = data.toString("base64");
+  const run = async (script: string, ...args: string[]) => {
+    const r = await zc.exec(agentId, ["bash", "-lc", script, "_", ...args]);
+    if (r.exit_code !== 0) throw new Error(`Sandbox upload failed: ${r.stderr || r.stdout}`);
+  };
+  await run('mkdir -p "$(dirname "$1")" && : > "$1.b64"', target);
+  for (let i = 0; i < b64.length; i += 60_000) await run('printf %s "$2" >> "$1.b64"', target, b64.slice(i, i + 60_000));
+  await run('base64 -d "$1.b64" > "$1" && rm "$1.b64"', target);
+}
+
+/** Downloads the newest artifact a session published from `sourcePath` (a /workspace path). */
+export async function downloadPublished(agentId: string, sessionId: string, sourcePath: string): Promise<Buffer> {
+  const zc = zoowork();
+  const { artifacts } = await zc.listArtifacts(agentId, { sessionId });
+  const artifact = artifacts.find((a) => a.source_path?.endsWith(sourcePath) && a.status === "ready");
+  if (!artifact) throw new Error(`The agent did not publish ${sourcePath}`);
+  const { url } = await zc.downloadArtifact(agentId, artifact.artifact_id);
+  const res = await fetch(url!);
+  if (!res.ok) throw new Error(`Artifact download failed (${res.status})`);
+  return Buffer.from(await res.arrayBuffer());
 }
 
 /**

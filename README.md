@@ -106,3 +106,12 @@ scripts/      seeding and maintenance scripts
 fixtures/     sample catalog
 ```
 
+
+## Running it
+
+First-time setup on a Mac: see **SETUP.md** (or double-click `setup.command`). After that:
+
+```bash
+pnpm band-setup   # once: registers both Band agents and the demo room into .env
+pnpm demo         # web on localhost:3000 + store agent + shopper agent
+```
