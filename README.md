@@ -1,4 +1,5 @@
-# Shelfie
+# Shelfie (1st Place Grand Winner @ ZooWork×AI Valley Hackathon)
+*Also received 1st Place Best Usage of ZooWork award & 1st Place Best Usage of Band AI award*
 
 **One minute of video, and any small store can sell to AI shoppers.**
 
