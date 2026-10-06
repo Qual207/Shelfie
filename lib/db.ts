@@ -95,8 +95,16 @@ export function openDb(file: string = DB_PATH): Db {
   db.exec(SCHEMA);
   // Product imaging columns, added in place so existing demo databases keep their data.
   const columns = (db.prepare("PRAGMA table_info(products)").all() as { name: string }[]).map((c) => c.name);
-  for (const column of ["crop_path", "image_path", "check_status", "check_note"]) {
-    if (!columns.includes(column)) db.exec(`ALTER TABLE products ADD COLUMN ${column} TEXT`);
+  const added: [string, string][] = [
+    ["crop_path", "TEXT"],
+    ["image_path", "TEXT"],
+    ["check_status", "TEXT"],
+    ["check_note", "TEXT"],
+    ["imaged_at", "TEXT"], // photo pipeline finished (crop, retouch, check), so it never reruns
+    ["imaging_attempts", "INTEGER NOT NULL DEFAULT 0"], // failed runs; the pipeline gives up after 3
+  ];
+  for (const [column, type] of added) {
+    if (!columns.includes(column)) db.exec(`ALTER TABLE products ADD COLUMN ${column} ${type}`);
   }
   return db;
 }

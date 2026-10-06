@@ -91,7 +91,8 @@ export function imageTool(toolName: string, files: string[]): ToolHandler {
 
 const framesTool = (frames: string[]) => imageTool("get_frames", frames);
 
-async function askVision(prompt: string, onTool?: ToolHandler) {
+/** One JSON turn on the vision agent (Sonnet). Images reach it through the get_frames tool. */
+export async function askVision(prompt: string, onTool?: ToolHandler) {
   return askJson(await visionAgentId(), prompt, onTool);
 }
 

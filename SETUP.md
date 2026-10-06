@@ -78,6 +78,7 @@ Use **Google Chrome**. Voice pricing only works in Chrome.
 ### 5. Before using your real store
 
 - **Clear the sample catalog:** click **Clear test data** in the sidebar (or on Catalog and Insights), then **Clear everything**. The same dialog clears just the catalog, holds, conversations or analyst reports, saves and restores a starting point for repeat tests, and loads sample data.
+- **Product photos:** after each scan, every product is cropped out of the video, retouched into a clean photo, and checked by a vision model (does it match its name and description, and did the retouch invent anything). This runs in the background, about a minute per product, and cards say "Checking photo…" meanwhile. Products scanned before this existed catch up on their own the next time the app runs. Set `PHOTO_RETOUCH=off` in `.env` to skip the retouch.
 - **Store details:** edit `lib/store-info.ts` (name, address, hours) and restart. The agents read it on startup.
 - **iPhone videos:** `.mov` files scan fine but won't play in the page. Convert them for playback:
   `ffmpeg -i in.mov -c:v libx264 -crf 23 -preset fast -an -movflags +faststart out.mp4`
