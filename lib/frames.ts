@@ -3,10 +3,9 @@ import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
 import { DATA_DIR } from "./db";
+import { frameCount } from "./sampling";
 
 const run = promisify(execFile);
-
-export const FRAME_COUNT = 10;
 
 /** Frames live under data/frames/<scanId>/; paths are stored relative to data/. */
 function frameDir(scanId: number): string {
@@ -17,7 +16,7 @@ function frameDir(scanId: number): string {
 
 const relative = (file: string) => path.relative(DATA_DIR, file).split(path.sep).join("/");
 
-/** Samples FRAME_COUNT frames spread evenly across the video, long side at most 1024 px. */
+/** Samples one frame per second (see lib/sampling.ts) spread evenly across the video, long side at most 1024 px. */
 export async function extractFrames(videoPath: string, scanId: number): Promise<string[]> {
   const { stdout } = await run("ffprobe", [
     "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", videoPath,
@@ -25,11 +24,12 @@ export async function extractFrames(videoPath: string, scanId: number): Promise<
   const duration = Number.parseFloat(stdout);
   if (!Number.isFinite(duration) || duration <= 0) throw new Error("Could not read the video's length");
 
+  const count = frameCount(duration);
   const dir = frameDir(scanId);
   await run("ffmpeg", [
     "-v", "error", "-y", "-i", videoPath,
-    "-vf", `fps=${FRAME_COUNT / duration},scale='if(gt(iw,ih),min(1024,iw),-2)':'if(gt(iw,ih),-2,min(1024,ih))'`,
-    "-frames:v", String(FRAME_COUNT), "-q:v", "4", "-start_number", "0",
+    "-vf", `fps=${count / duration},scale='if(gt(iw,ih),min(1024,iw),-2)':'if(gt(iw,ih),-2,min(1024,ih))'`,
+    "-frames:v", String(count), "-q:v", "4", "-start_number", "0",
     path.join(dir, "frame-%02d.jpg"),
   ]);
   const frames = readdirSync(dir).filter((f) => f.endsWith(".jpg")).sort();

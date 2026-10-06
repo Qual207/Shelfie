@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Capture } from "@/components/capture";
 import { api, json, mediaUrl, useAppState } from "@/components/client";
 import { Page } from "@/components/page";
+import { PhotoProgress } from "@/components/photo-progress";
 import { ProductCard } from "@/components/product-card";
 import { VoicePrice } from "@/components/voice-price";
 import { ErrorBanner, Working } from "@/components/status";
@@ -57,6 +58,7 @@ export default function ScanPage() {
       actions={<VoicePrice disabled={!state?.products.some((p) => p.price_usd === null)} />}
     >
       <ErrorBanner message={pollError} />
+      <PhotoProgress products={state?.products ?? []} />
       <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,9fr)] gap-8 items-start">
         <section className="panel p-5 flex flex-col gap-5 lg:sticky lg:top-6" aria-label="New scan">
           <label className="flex flex-col gap-1.5">

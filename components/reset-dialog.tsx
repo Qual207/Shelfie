@@ -69,12 +69,6 @@ const RESTORE: Action = {
   confirm: () => "Replace everything you have now with the saved starting point?",
   disabled: (s) => !s.snapshot_saved_at,
 };
-const SAMPLE_CATALOG: Action = {
-  action: "sample_catalog",
-  label: "Load sample catalog",
-  done: "Sample catalog loaded",
-  confirm: () => "This clears everything first, then loads 14 sample souvenirs. Continue?",
-};
 const SAMPLE_CONVERSATIONS: Action = {
   action: "sample_conversations",
   label: "Add sample conversations",
@@ -222,14 +216,12 @@ export function ResetDialog({ trigger }: { trigger: "sidebar" | "button" }) {
               Sample data
             </h3>
             <p className="text-muted text-sm mt-0.5 mb-3">
-              Try the agents and Insights without filming a shelf. Sample conversations are made up; don&apos;t show them as
-              real shopper history.
+              Try Insights before real shoppers arrive: adds two made-up conversations about your approved products.
+              Don&apos;t show them as real shopper history.
             </p>
             <div className="flex flex-wrap gap-3">
-              {button(SAMPLE_CATALOG)}
               {button(SAMPLE_CONVERSATIONS)}
             </div>
-            {confirmRow(SAMPLE_CATALOG)}
           </section>
 
           <section className="pt-5 border-t border-line flex flex-wrap items-center gap-4" aria-label="Clear everything">

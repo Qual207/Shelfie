@@ -41,7 +41,10 @@ export function ProductCard({ product, review }: { product: StateProduct; review
 
   // Retouched photo first, then the crop from the video, then the whole frame.
   const retouched = !showOriginal && product.image_path;
-  const photo = (retouched ? product.image_path : product.crop_path) ?? product.frame_path;
+  // A photo the check found doesn't show the product is removed, not replaced by the whole frame.
+  const photo = product.check_status === "no_match" || product.check_status === "not_product"
+    ? null
+    : ((retouched ? product.image_path : product.crop_path) ?? product.frame_path);
   const cutOut = Boolean(retouched || product.crop_path);
   const photoPending = product.frame_path && !product.imaged_at && product.imaging_attempts < 3;
   return (
@@ -51,12 +54,13 @@ export function ProductCard({ product, review }: { product: StateProduct; review
           // eslint-disable-next-line @next/next/no-img-element -- photos are served from data/, not optimizable static assets
           <img
             src={mediaUrl(photo)}
-            alt={retouched ? `${product.name}, retouched from the shelf video` : product.name}
+            alt={retouched ? `${product.name}, improved from the shelf video` : product.name}
             className={`w-full h-full ${cutOut ? "object-contain p-3" : "object-cover"} ${gone ? "grayscale opacity-60" : ""}`}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center px-6 text-center text-muted">{product.category || "No photo"}</div>
         )}
+        {photoPending && <PhotoWorking stage={product.imaging_stage} />}
         <StatusBadge product={product} />
         {product.image_path && (
           <button
@@ -64,13 +68,8 @@ export function ProductCard({ product, review }: { product: StateProduct; review
             aria-pressed={showOriginal}
             className="absolute bottom-2 right-2 bg-surface/95 border border-line rounded-full px-3 py-0.5 text-sm font-semibold hover:border-muted"
           >
-            {showOriginal ? "Show retouched" : "Show video photo"}
+            {showOriginal ? "Show improved photo" : "Show video photo"}
           </button>
-        )}
-        {photoPending && (
-          <span className="absolute bottom-2 left-2 bg-surface/95 border border-line rounded-full px-3 py-0.5 text-sm text-muted" role="status">
-            Checking photo…
-          </span>
         )}
       </div>
 
@@ -89,11 +88,9 @@ export function ProductCard({ product, review }: { product: StateProduct; review
               <span className="text-muted">{[product.shelf, product.location].filter(Boolean).join(", ")}</span>
             </p>
             <p className="leading-snug text-[0.95rem]">{product.description}</p>
-            <PhotoCheck product={product} />
             {product.price_usd === null && <PriceEntry busy={busy} onSave={(price_usd) => update({ price_usd })} />}
             <p className="text-sm text-muted mt-auto pt-1">
               Last seen {seenAgo(product.last_seen_at)}
-              {product.check_status === "verified" && ". Matches its photo"}
               {review && product.price_source && `. Price ${SOURCE_LABEL[product.price_source]}`}
             </p>
             {review && (
@@ -119,15 +116,31 @@ export function ProductCard({ product, review }: { product: StateProduct; review
   );
 }
 
-/** What the photo check found, when it found something the owner should know. */
-function PhotoCheck({ product }: { product: StateProduct }) {
-  if (product.check_status !== "corrected" && product.check_status !== "not_product") return null;
-  const flagged = product.check_status === "not_product";
+const STAGES = [
+  { key: "cropping", label: "Finding it in the video" },
+  { key: "checking", label: "Checking the listing" },
+  { key: "retouching", label: "Retouching the photo" },
+  { key: "comparing", label: "Comparing with the original" },
+] as const;
+
+/** Over the photo while the pipeline works on it: a scanning line, the current step, and progress. */
+function PhotoWorking({ stage }: { stage: StateProduct["imaging_stage"] }) {
+  const step = STAGES.findIndex((s) => s.key === stage);
   return (
-    <p className={`text-sm leading-snug border-l-2 pl-3 py-0.5 ${flagged ? "border-brick text-[#7a2a1b]" : "border-tag text-ink"}`}>
-      <b>{flagged ? "Doesn't look like a single product. " : "Checked against the photo. "}</b>
-      {product.check_note}
-    </p>
+    <div className="absolute inset-0 bg-paper/75 flex flex-col items-center justify-center gap-3 overflow-hidden" role="status">
+      <span className="scan-line" aria-hidden />
+      <span className="relative bg-surface border border-accent rounded-full px-3 py-1 text-sm font-semibold text-accent-dark">
+        {step >= 0 ? STAGES[step].label : "Waiting its turn"}
+      </span>
+      <ol className="relative flex gap-1.5" aria-label={step >= 0 ? `Step ${step + 1} of ${STAGES.length}` : "Not started"}>
+        {STAGES.map((s, i) => (
+          <li
+            key={s.key}
+            className={`h-1.5 w-8 rounded-full ${i < step ? "bg-accent" : i === step ? "bg-accent animate-pulse" : "bg-line"}`}
+          />
+        ))}
+      </ol>
+    </div>
   );
 }
 

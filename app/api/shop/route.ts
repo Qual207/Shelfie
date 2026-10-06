@@ -40,7 +40,8 @@ export async function GET(request: Request) {
     if (!from || !since) return errorResponse(new Error("from and since are required"), 400);
     const hold = getDb()
       .prepare(
-        `SELECT p.name AS product_name, p.price_usd, p.frame_path, COALESCE(p.image_path, p.crop_path) AS image_path,
+        `SELECT p.name AS product_name, p.price_usd,
+                CASE WHEN p.check_status IN ('no_match', 'not_product') THEN NULL ELSE p.frame_path END AS frame_path, COALESCE(p.image_path, p.crop_path) AS image_path,
                 h.customer_name, h.until_time
          FROM holds h JOIN products p ON p.id = h.product_id
          WHERE h.created_at >= ? ORDER BY h.id DESC LIMIT 1`,

@@ -11,8 +11,8 @@ await processPendingPhotos(db);
 const left = (db.prepare(pending).get() as { n: number }).n;
 const counts = db
   .prepare(
-    `SELECT SUM(crop_path IS NOT NULL) AS cropped, SUM(image_path IS NOT NULL) AS retouched,
-            SUM(check_status = 'corrected') AS corrected, SUM(check_status = 'not_product') AS flagged
+    `SELECT SUM(crop_path IS NOT NULL) AS cropped, SUM(image_path LIKE '%-retouched.jpg') AS retouched,
+            SUM(image_path LIKE '%-enhanced.jpg') AS sharpened, SUM(check_status = 'corrected') AS relabelled, SUM(check_status = 'no_match') AS photo_removed
      FROM products WHERE frame_path IS NOT NULL`,
   )
   .get() as Record<string, number>;
