@@ -196,3 +196,23 @@ button:disabled {
     transform: translateX(300%);
   }
 }
+
+/* The line that sweeps over a product photo while the photo pipeline works on it. */
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-accent);
+  box-shadow: 0 0 14px 3px rgb(31 91 75 / 0.45);
+  animation: scan 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes scan {
+  from {
+    top: 6%;
+  }
+  to {
+    top: 94%;
+  }
+}

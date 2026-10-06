@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { frameCount } from "@/lib/sampling";
+
 const CLIP_SECONDS = 5;
-const CLIP_FRAMES = 10;
+const CLIP_FRAMES = frameCount(CLIP_SECONDS); // same rate as uploaded videos
 
 /** Upload a shelf video, or record a short webcam clip as JPEG frames. */
 export function Capture({ busy, onCapture }: { busy: boolean; onCapture: (form: FormData) => void }) {

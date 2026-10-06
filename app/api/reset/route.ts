@@ -8,12 +8,12 @@ import {
   saveSnapshot,
   type ClearScope,
 } from "@/lib/reset";
-import { seedCatalog, seedSampleConversations } from "@/lib/seed";
+import { seedSampleConversations } from "@/lib/seed";
 import { errorResponse } from "@/lib/upload";
 
 export const dynamic = "force-dynamic";
 
-export type ResetAction = ClearScope | "save" | "restore" | "sample_catalog" | "sample_conversations";
+export type ResetAction = ClearScope | "save" | "restore" | "sample_conversations";
 
 const SCOPES: ClearScope[] = ["catalog", "holds", "conversations", "reports", "everything"];
 
@@ -31,11 +31,7 @@ export async function POST(request: Request) {
       if (clearsMedia(action as ClearScope)) clearMedia();
     } else if (action === "save") saveSnapshot(db);
     else if (action === "restore") restoreSnapshot(db);
-    else if (action === "sample_catalog") {
-      clearData(db, "everything");
-      clearMedia();
-      seedCatalog(db);
-    } else if (action === "sample_conversations") seedSampleConversations(db);
+    else if (action === "sample_conversations") seedSampleConversations(db);
     else return errorResponse(new Error(`Unknown action "${action}"`), 400);
     return Response.json(dataSummary(db));
   } catch (err) {

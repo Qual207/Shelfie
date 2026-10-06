@@ -24,12 +24,13 @@ export interface Product {
   crop_path: string | null;
   /** Display photo: the refined crop when refinement succeeded, else the crop. */
   image_path: string | null;
-  /** VLM check of the crop: null = not checked yet. */
-  check_status: "verified" | "corrected" | "not_product" | null;
+  /** VLM check of the crop: null = not checked yet. no_match = photo removed ("not_product" on older rows). */
+  check_status: "verified" | "corrected" | "no_match" | "not_product" | null;
   check_note: string | null;
   /** When the photo pipeline finished for this product; null while it is pending. */
   imaged_at: string | null;
   imaging_attempts: number;
+  imaging_stage: "queued" | "cropping" | "checking" | "retouching" | "comparing" | null;
 }
 
 /** A product as the vision model reports it (scan format). */

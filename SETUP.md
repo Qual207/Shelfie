@@ -10,7 +10,6 @@ API keys and one double-click. Plan on about 10 minutes.
 - `pnpm install` is done, including the native SQLite module, which was built for your Node.
 - The production build, typecheck, lint and all 16 unit tests pass.
 - `.env` exists with empty keys. Only you can read it, and git ignores it.
-- A sample catalog is loaded (14 souvenirs on two shelves), so the pages and agents have something to show before your first scan. Step 5 explains how to clear it.
 - Tested on this Mac: every page loads. Uploading a video (H.264 `.mp4` and iPhone HEVC `.mov` both work) or webcam frames saves the upload and pulls 10 frames at 1024 px or smaller. The scan then stops with "No ZooWork API key", which means everything before ZooWork works.
 - New: `pnpm band-setup` registers both Band agents, saves their keys to `.env`, and creates the demo rooms. `setup.command` runs every step in order.
 - Fixed: `pnpm test:zoowork` would have failed on any Mac. It used a Windows font path, and Homebrew's ffmpeg can't draw text.
@@ -77,7 +76,7 @@ Use **Google Chrome**. Voice pricing only works in Chrome.
 
 ### 5. Before using your real store
 
-- **Clear the sample catalog:** click **Clear test data** in the sidebar (or on Catalog and Insights), then **Clear everything**. The same dialog clears just the catalog, holds, conversations or analyst reports, saves and restores a starting point for repeat tests, and loads sample data.
+- **Clear test data** (sidebar, or on Catalog and Insights) clears the catalog, holds, conversations or analyst reports one at a time, or everything, and saves and restores a starting point for repeat tests.
 - **Product photos:** after each scan, every product is cropped out of the video, retouched into a clean photo, and checked by a vision model (does it match its name and description, and did the retouch invent anything). This runs in the background, about a minute per product, and cards say "Checking photo…" meanwhile. Products scanned before this existed catch up on their own the next time the app runs. Set `PHOTO_RETOUCH=off` in `.env` to skip the retouch.
 - **Store details:** edit `lib/store-info.ts` (name, address, hours) and restart. The agents read it on startup.
 - **iPhone videos:** `.mov` files scan fine but won't play in the page. Convert them for playback:

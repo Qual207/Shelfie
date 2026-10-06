@@ -7,6 +7,7 @@ import { Capture } from "@/components/capture";
 import { api, json, mediaUrl, useAppState } from "@/components/client";
 import { ProductCard } from "@/components/product-card";
 import { Page } from "@/components/page";
+import { PhotoProgress } from "@/components/photo-progress";
 import { ResetDialog } from "@/components/reset-dialog";
 import { ErrorBanner, Working } from "@/components/status";
 
@@ -73,6 +74,7 @@ export default function CatalogAdminPage() {
       }
     >
       <ErrorBanner message={pollError} />
+      <PhotoProgress products={state?.products ?? []} />
       <div className="grid lg:grid-cols-[minmax(0,4fr)_minmax(0,10fr)] gap-8 items-start">
         <section className="panel p-5 flex flex-col gap-4 lg:sticky lg:top-6" aria-labelledby="rescan-title">
           <div>
