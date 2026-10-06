@@ -12,6 +12,7 @@ export function ProductCard({ product, review }: { product: StateProduct; review
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showOriginal, setShowOriginal] = useState(false);
   const gone = product.status === "approved" && product.on_shelf !== 1;
 
   async function update(body: object) {
@@ -38,21 +39,39 @@ export function ProductCard({ product, review }: { product: StateProduct; review
     }
   }
 
-  const photo = product.crop_path ?? product.frame_path;
+  // Retouched photo first, then the crop from the video, then the whole frame.
+  const retouched = !showOriginal && product.image_path;
+  const photo = (retouched ? product.image_path : product.crop_path) ?? product.frame_path;
+  const cutOut = Boolean(retouched || product.crop_path);
+  const photoPending = product.frame_path && !product.imaged_at && product.imaging_attempts < 3;
   return (
     <article className={`panel overflow-hidden flex flex-col ${gone ? "bg-paper" : ""}`}>
-      <div className={`aspect-[4/3] relative ${product.crop_path ? "specimen" : "bg-paper"}`}>
+      <div className={`aspect-[4/3] relative ${cutOut ? "specimen" : "bg-paper"}`}>
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element -- photos are served from data/, not optimizable static assets
           <img
             src={mediaUrl(photo)}
-            alt={product.name}
-            className={`w-full h-full ${product.crop_path ? "object-contain p-3" : "object-cover"} ${gone ? "grayscale opacity-60" : ""}`}
+            alt={retouched ? `${product.name}, retouched from the shelf video` : product.name}
+            className={`w-full h-full ${cutOut ? "object-contain p-3" : "object-cover"} ${gone ? "grayscale opacity-60" : ""}`}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center px-6 text-center text-muted">{product.category || "No photo"}</div>
         )}
         <StatusBadge product={product} />
+        {product.image_path && (
+          <button
+            onClick={() => setShowOriginal(!showOriginal)}
+            aria-pressed={showOriginal}
+            className="absolute bottom-2 right-2 bg-surface/95 border border-line rounded-full px-3 py-0.5 text-sm font-semibold hover:border-muted"
+          >
+            {showOriginal ? "Show retouched" : "Show video photo"}
+          </button>
+        )}
+        {photoPending && (
+          <span className="absolute bottom-2 left-2 bg-surface/95 border border-line rounded-full px-3 py-0.5 text-sm text-muted" role="status">
+            Checking photo…
+          </span>
+        )}
       </div>
 
       <div className="p-4 flex flex-col gap-2 flex-1">
@@ -70,9 +89,11 @@ export function ProductCard({ product, review }: { product: StateProduct; review
               <span className="text-muted">{[product.shelf, product.location].filter(Boolean).join(", ")}</span>
             </p>
             <p className="leading-snug text-[0.95rem]">{product.description}</p>
+            <PhotoCheck product={product} />
             {product.price_usd === null && <PriceEntry busy={busy} onSave={(price_usd) => update({ price_usd })} />}
             <p className="text-sm text-muted mt-auto pt-1">
               Last seen {seenAgo(product.last_seen_at)}
+              {product.check_status === "verified" && ". Matches its photo"}
               {review && product.price_source && `. Price ${SOURCE_LABEL[product.price_source]}`}
             </p>
             {review && (
@@ -98,6 +119,18 @@ export function ProductCard({ product, review }: { product: StateProduct; review
   );
 }
 
+/** What the photo check found, when it found something the owner should know. */
+function PhotoCheck({ product }: { product: StateProduct }) {
+  if (product.check_status !== "corrected" && product.check_status !== "not_product") return null;
+  const flagged = product.check_status === "not_product";
+  return (
+    <p className={`text-sm leading-snug border-l-2 pl-3 py-0.5 ${flagged ? "border-brick text-[#7a2a1b]" : "border-tag text-ink"}`}>
+      <b>{flagged ? "Doesn't look like a single product. " : "Checked against the photo. "}</b>
+      {product.check_note}
+    </p>
+  );
+}
+
 function StatusBadge({ product }: { product: StateProduct }) {
   const [label, dot] =
     product.status === "pending"
@@ -117,7 +150,7 @@ function PriceEntry({ busy, onSave }: { busy: boolean; onSave: (price: number) =
   const [value, setValue] = useState("");
   return (
     <form
-      className="flex items-center gap-2 min-w-0"
+      className="flex flex-wrap items-center gap-2"
       onSubmit={(e) => {
         e.preventDefault();
         if (Number(value) > 0) onSave(Number(value));
@@ -130,7 +163,7 @@ function PriceEntry({ busy, onSave }: { busy: boolean; onSave: (price: number) =
         inputMode="decimal"
         placeholder="$"
         aria-label="Price in US dollars"
-        className="field flex-1 min-w-0 max-w-28 py-1"
+        className="field w-24 shrink-0 py-1"
       />
       <button disabled={busy || !(Number(value) > 0)} className="btn btn-primary py-1">
         Set

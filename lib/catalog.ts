@@ -27,6 +27,9 @@ export interface Product {
   /** VLM check of the crop: null = not checked yet. */
   check_status: "verified" | "corrected" | "not_product" | null;
   check_note: string | null;
+  /** When the photo pipeline finished for this product; null while it is pending. */
+  imaged_at: string | null;
+  imaging_attempts: number;
 }
 
 /** A product as the vision model reports it (scan format). */

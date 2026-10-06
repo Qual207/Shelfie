@@ -22,6 +22,10 @@ export default function CatalogPage() {
       <ul className="list-disc pl-6 mt-4">
         {products.map((p) => (
           <li key={p.id} id={`product-${p.id}`} className="mb-3">
+            {(p.image_path ?? p.crop_path) && (
+              // eslint-disable-next-line @next/next/no-img-element -- photos are served from data/
+              <img src={`/api/media/${p.image_path ?? p.crop_path}`} alt={p.name} className="block w-40 h-40 object-contain my-2" />
+            )}
             <b>{p.name}</b>, {p.price_usd === null ? "price on request" : `$${p.price_usd.toFixed(2)}`}. {p.category}. {p.description}{" "}
             Last seen on the shelf {seenAgo(p.last_seen_at)}.
           </li>

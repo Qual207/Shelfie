@@ -1,5 +1,7 @@
 import type { Product } from "@/lib/catalog";
+import { after } from "next/server";
 import { getDb } from "@/lib/db";
+import { processPendingPhotos } from "@/lib/imaging";
 import { rescanDiff, type RescanDiff, type Scan } from "@/lib/scans";
 import { STORE_INFO } from "@/lib/store-info";
 
@@ -21,6 +23,7 @@ export interface AppState {
 
 export async function GET() {
   const db = getDb();
+  after(() => processPendingPhotos(db)); // older products catch up on photos; no-op when none are pending
   const products = db
     .prepare("SELECT p.*, s.shelf FROM products p LEFT JOIN scans s ON s.id = p.scan_id ORDER BY p.id")
     .all() as StateProduct[];
